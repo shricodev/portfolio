@@ -1,0 +1,117 @@
+---
+title: "google-sheet-super-agent"
+description: "An AI Agent to work with Google Sheet using Natural Language"
+clone_url: "https://github.com/shricodev/google-sheet-super-agent.git"
+language: "TypeScript"
+homepage: ""
+topics:
+  - "composio"
+  - "gemini-api"
+  - "gemini-tts"
+  - "nextjs"
+  - "showcase"
+  - "tts"
+created_at: "2025-08-29T07:45:29Z"
+updated_at: "2025-09-12T09:26:33Z"
+---
+
+# 📊 Google Sheet Super Agent 🤖
+
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Vercel AI SDK](https://img.shields.io/badge/Vercel_AI_SDK-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://sdk.vercel.ai/)
+
+> ✨ **Built with [Composio](https://composio.dev/)**
+
+An intelligent agent that can connect to your Google Sheets, understand your data, and answer your questions in natural language. 💬
+
+## 🚀 Overview
+
+This project is a Next.js application that leverages the Vercel AI SDK to create a chat interface for interacting with Google Sheets. You can provide a Google Sheet URL, and the agent will be able to perform analysis and answer questions about the data in the sheet.
+
+## ✨ Features
+
+- **Connect to any Google Sheet:** Simply provide a public Google Sheet URL.
+- **Natural Language Queries:** Ask questions in plain English.
+- **AI-Powered Analysis:** Get insights and answers from your data using powerful AI models.
+- **Streaming Responses:** Get real-time answers from the AI agent.
+- **Code Highlighting:** View the code that the agent uses to analyze your data.
+
+## 🛠️ Tech Stack
+
+- **Framework:** [Next.js](https://nextjs.org/)
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **AI:** [Vercel AI SDK](https://sdk.vercel.ai/), [Google Gemini](https://ai.google.dev/)
+- **Component Library:** [shadcn/ui](https://ui.shadcn.com/)
+- **Integrations:** [Composio](https://composio.dev/) for Google Sheets connection.
+
+## 🏁 Getting Started
+
+Follow these steps to get the project up and running on your local machine.
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/en/) (v20 or later)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/shricodev/google-sheet-super-agent.git
+cd google-sheet-super-agent
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Set up environment variables
+
+You'll need to create a `.env.local` file in the root of the project and add the following environment variables. You can get these from Google Cloud Console and Composio.
+
+```env
+# API key for Google Gemini (direct access)
+GEMINI_API_KEY=
+
+# API key for Composio (tool integrations like Google Sheets)
+COMPOSIO_API_KEY=
+
+# Composio user ID (get this from your Composio dashboard after login)
+COMPOSIO_GOOGLE_SHEET_USER_ID=
+
+# Auth config ID for Google Sheets inside Composio
+GOOGLE_SHEETS_AUTH_CONFIG_ID=
+
+# API key for Google Generative AI SDK (Gemini SDK client)
+GOOGLE_GENERATIVE_AI_API_KEY=
+
+# Secret key for signing/encrypting sessions
+SESSION_SECRET=<secret_key_for_session>
+```
+
+### 4. Run the development server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## 📜 Available Scripts
+
+- `npm run dev`: Starts the development server.
+- `npm run build`: Builds the application for production.
+- `npm run start`: Starts a production server.
+- `npm run lint`: Lints the codebase.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a pull request or open an issue.
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
