@@ -1,0 +1,219 @@
+---
+title: "all-in-one-agent"
+description: "customer care agent built with Tool Router (Composio)"
+clone_url: "https://github.com/shricodev/all-in-one-agent.git"
+language: "TypeScript"
+homepage: ""
+topics:
+  - "ai-agents"
+  - "composio"
+  - "nextjs"
+  - "showcase"
+  - "streaming"
+created_at: "2026-01-23T10:16:22Z"
+updated_at: "2026-01-27T12:20:38Z"
+---
+
+# Codev Agent
+
+An all-in-one AI-powered built with Next.js and Composio Tool Router. This application enables intelligent automation across 1000+ tools for any tasks like processing refunds, checking orders, creating tickets, and pretty much everything.
+
+**Built by [Shrijal Acharya (@shricodev)](https://github.com/shricodev)**
+
+## Features
+
+- **Dynamic Tool Discovery**: Uses Composio Tool Router to search and discover the right tools at runtime
+- **In-Chat Authentication**: Seamlessly handles OAuth flows when tools require authentication
+- **Real-time Activity Panel**: See exactly what the agent is doing with tool calls, status updates, and results
+- **Multi-turn Conversations**: Maintains context across multiple messages
+- **Beautiful Onboarding**: Guided setup with toolkit selection and authentication
+- **Support-focused Behavior**: Confirmation gates for destructive actions, handoff to human support
+
+## Architecture
+
+```
+├── app/
+│   ├── api/
+│   │   ├── session/     # Composio session management
+│   │   ├── toolkits/    # List and manage toolkits
+│   │   ├── auth/        # Manual authentication flow
+│   │   └── chat/        # SSE endpoint for agent chat
+│   ├── onboarding/      # Setup wizard
+│   ├── console/         # Main chat interface
+│   └── page.tsx         # Entry point routing
+├── components/
+│   ├── ui/              # Base UI components
+│   ├── toolkit-card.tsx # Toolkit selection cards
+│   ├── chat-message.tsx # Chat message rendering
+│   ├── tool-call-card.tsx # Tool call display
+│   └── activity-panel.tsx # Agent activity timeline
+├── hooks/
+│   ├── use-chat.ts      # Chat SSE hook
+│   └── use-toolkits.ts  # Toolkit management hook
+└── lib/
+    ├── types.ts         # TypeScript types
+    ├── schemas.ts       # Zod validation schemas
+    ├── utils.ts         # Utility functions
+    ├── composio.ts      # Composio integration
+    └── agent.ts         # OpenAI Agent runner
+```
+
+## Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- [Composio API Key](https://app.composio.dev/settings)
+- [OpenAI API Key](https://platform.openai.com/api-keys)
+
+## Setup
+
+1. **Clone and install dependencies**
+
+```bash
+cd all-in-one-agent-composio
+npm install
+```
+
+2. **Configure environment variables**
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your API keys:
+
+```env
+COMPOSIO_API_KEY=your_composio_api_key
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-5.2
+DEFAULT_USER_ID=default_user
+NEXT_PUBLIC_DEFAULT_USER_ID=default_user
+```
+
+3. **Run the development server**
+
+```bash
+npm run dev
+```
+
+4. **Open the app**
+
+Navigate to [http://localhost:3000](http://localhost:3000)
+
+## Usage
+
+### Onboarding
+
+1. **Welcome**: Learn about the agent's capabilities
+2. **Select Toolkits**: Choose which tools to connect (Gmail, Slack, Stripe, etc.)
+3. **Connect Accounts**: Authenticate each selected toolkit
+4. **Finish**: Start using the support console
+
+### Support Console
+
+The main interface has two panels:
+
+- **Left**: Chat with the AI agent
+- **Right**: Activity panel showing tool calls and their results
+
+### Demo Prompts
+
+Try these example prompts:
+
+```
+"Create a support ticket for a billing issue and notify the team on Slack"
+
+"Summarize today's support tickets in this github repository: <repo_link>"
+```
+
+### Authentication Flow
+
+When the agent needs to use a tool that requires authentication:
+
+1. The agent will indicate authentication is needed
+2. A Connect Link URL will be provided
+3. Click the link to authenticate in a new window
+4. Return to the chat and continue your conversation
+5. The agent will automatically retry the action
+
+## Configuration
+
+### Model Selection
+
+Configure the OpenAI model in `.env.local`:
+
+```env
+OPENAI_MODEL=gpt-5.2
+# OPENAI_MODEL=gpt-4.1
+# OPENAI_MODEL=gpt-4o
+```
+
+### User Management
+
+- Session creation: `composio.create(userId)`
+- Chat API: `POST /api/chat { userId, message }`
+- Toolkit API: `GET /api/toolkits?userId=...`
+- Auth API: `POST /api/auth { userId, toolkit }`
+
+### Toolkit Configuration
+
+By default, all toolkits are available. To restrict to specific toolkits, modify `lib/composio.ts`:
+
+```typescript
+const session = await composio.create(userId, {
+  toolkits: ["gmail", "slack", "stripe", "zendesk"],
+});
+```
+
+## How It Works
+
+### Composio Tool Router
+
+Tool Router provides a unified interface for the agent to:
+
+1. **Search** for relevant tools based on the user's request
+2. **Plan** multi-step actions across different services
+3. **Authenticate** users via Connect Links when needed
+4. **Execute** actions and return results
+
+The agent doesn't hardcode specific tool integrations. Instead, it dynamically discovers the right tools at runtime.
+
+### MCP Integration
+
+The application uses Composio's hosted MCP (Model Context Protocol) server:
+
+```typescript
+const session = await composio.create(userId);
+
+const agent = new Agent({
+  tools: [
+    hostedMcpTool({
+      serverLabel: "composio",
+      serverUrl: session.mcp.url,
+      headers: session.mcp.headers,
+    }),
+  ],
+});
+```
+
+### SSE Streaming
+
+The chat API uses Server-Sent Events for real-time updates:
+
+- `connected`: Connection established
+- `activity_start/update/complete`: Agent activity updates
+- `tool_call_start/complete`: Tool execution status
+- `message_start/delta/complete`: Streaming message content
+- `auth_required`: Authentication needed
+- `error`: Error occurred
+- `done`: Request complete
+
+## Development
+
+### Project Structure
+
+- **TypeScript**: Full type safety throughout
+- **Zod**: Runtime validation for API requests/responses
+- **Next.js App Router**: Server components and API routes
+- **Tailwind CSS**: Utility-first styling
+- **Lucide Icons**: Beautiful icon set
