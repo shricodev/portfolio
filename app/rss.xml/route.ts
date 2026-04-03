@@ -1,4 +1,4 @@
-import { getBlogPostsCardMeta } from '@/lib/blogs'
+import { getBlogPostsCardMeta, encodeSourceSlug } from '@/lib/blogs'
 import { BASE_URL, PUBLIC_GMAIL } from '@/lib/constants'
 import { getProjectsMetadata } from '@/lib/projects'
 import RSS from 'rss'
@@ -60,7 +60,7 @@ export async function GET() {
       description: blog.brief
         ? blog.brief
         : `${blog.title} blog by Shrijal Acharya`,
-      url: new URL(`/blogs/${blog.slug}`, BASE_URL).toString(),
+      url: new URL(`/blogs/${encodeSourceSlug(blog.source, blog.slug)}`, BASE_URL).toString(),
       date: new Date(blog.publishedAt),
       author: blog.author.name,
       category: 'Blogs',

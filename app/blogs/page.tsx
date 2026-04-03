@@ -9,21 +9,24 @@ import {
   PAGE_QUERY_PARAM,
   PER_PAGE_QUERY_PARAM,
   SEARCH_QUERY_PARAM,
+  SOURCE_QUERY_PARAM,
+  BLOG_SOURCE_OPTIONS,
+  type BlogSourceFilter,
 } from '@/lib/constants'
-import { getBlogPostsCardMeta } from '@/lib/blogs'
+import { getBlogPostsCardMeta, getBlogPostsCount } from '@/lib/blogs'
 import type { Metadata } from 'next'
-import { getBlogPostsCount } from '@/lib/blogs'
 import { FilterDropdown } from '@/components/filter-dropdown'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { parseQueryParams } from '@/lib/query-params'
+import { SourceFilter } from '@/components/source-filter'
 
 export const metadata: Metadata = {
   title: 'Blogs',
   description:
-    'Explore my collection of blog posts, where I share my ideas on coding, DevOps, cloud and more, powered by Hashnode Headless CMS.',
+    'Explore my collection of blog posts from DEV and freeCodeCamp, where I share my ideas on coding, DevOps, cloud and more.',
 }
 
 export default async function Page({
@@ -38,13 +41,34 @@ export default async function Page({
     endpoint: 'blogs',
   })
 
-  const { blogs } = searchQuery
+  const sourceRaw = resolvedSearchParams?.[SOURCE_QUERY_PARAM]
+  const sourceFilter: BlogSourceFilter =
+    typeof sourceRaw === 'string' &&
+    BLOG_SOURCE_OPTIONS.includes(sourceRaw as BlogSourceFilter)
+      ? (sourceRaw as BlogSourceFilter)
+      : 'all'
+
+  // When searching or filtering by source, fetch all posts and filter client-side
+  const needsAllPosts = !!searchQuery || sourceFilter !== 'all'
+
+  const { blogs: allBlogs } = needsAllPosts
     ? await getBlogPostsCardMeta({ all: true })
     : await getBlogPostsCardMeta({ page: pageQuery, pageSize: perPageQuery })
 
+  // Apply source filter
+  const sourceFilteredBlogs =
+    sourceFilter === 'all'
+      ? allBlogs
+      : allBlogs.filter(blog =>
+          sourceFilter === 'devto'
+            ? blog.source === 'devto'
+            : blog.source === 'hashnode',
+        )
+
+  // Apply search filter
   const filteredBlogs = searchQuery
     ? {
-        blogs: blogs.filter(
+        blogs: sourceFilteredBlogs.filter(
           blog =>
             blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             blog.tags?.some(tag =>
@@ -52,18 +76,20 @@ export default async function Page({
             ),
         ),
       }
-    : { blogs }
+    : { blogs: sourceFilteredBlogs }
 
   const filteredBlogsLength = filteredBlogs.blogs.length
 
-  const blogslength = searchQuery
+  const blogslength = needsAllPosts
     ? filteredBlogsLength
     : await getBlogPostsCount()
 
   const totalPages = Math.max(Math.ceil(blogslength / perPageQuery), 0)
 
   if (totalPages > 0 && pageQuery > totalPages) {
-    const params = new URLSearchParams(resolvedSearchParams as Record<string, string>)
+    const params = new URLSearchParams(
+      resolvedSearchParams as Record<string, string>,
+    )
     params.set(PAGE_QUERY_PARAM, String(totalPages))
     redirect(`/blogs?${params.toString()}`)
   }
@@ -76,7 +102,7 @@ export default async function Page({
   const noOfBlogsShownAlready =
     filteredBlogsLength === 0
       ? 0
-      : searchQuery
+      : needsAllPosts
         ? paginatedFilteredBlogs.length + (pageQuery - 1) * perPageQuery
         : filteredBlogsLength + (pageQuery - 1) * perPageQuery
 
@@ -89,7 +115,7 @@ export default async function Page({
           Heads up!
         </AlertTitle>
         <AlertDescription className='text-sm text-muted-foreground'>
-          Check out these posts on{' '}
+          These posts are aggregated from{' '}
           <a
             href='https://dev.to/shricodev'
             target='_blank'
@@ -100,14 +126,14 @@ export default async function Page({
           </a>{' '}
           and{' '}
           <a
-            href='https://shricodev.hashnode.dev'
+            href='https://freecodecamp.org/news/author/shricodev'
             target='_blank'
             rel='noreferrer noopener'
             className='font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground hover:transition'
           >
-            Hashnode
-          </a>{' '}
-          for full engagement.
+            freeCodeCamp
+          </a>
+          . Visit them for full engagement.
         </AlertDescription>
       </Alert>
 
@@ -127,6 +153,10 @@ export default async function Page({
           debounceTime={DEBOUNCE_TIME_BLOGS}
           placeholder='Search blogs by title or tags...'
         />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SourceFilter current={sourceFilter} />
       </Suspense>
 
       <Suspense
@@ -166,7 +196,7 @@ export default async function Page({
       </div>
 
       <Blogs
-        blogsWithMeta={searchQuery ? paginatedFilteredBlogs : blogs}
+        blogsWithMeta={needsAllPosts ? paginatedFilteredBlogs : allBlogs}
         searchParams={{
           [SEARCH_QUERY_PARAM]: searchQuery,
           [PAGE_QUERY_PARAM]: pageQuery.toString(),

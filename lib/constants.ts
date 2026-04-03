@@ -17,6 +17,10 @@ export const PAGE_MAX = 500
 export const SEARCH_QUERY_PARAM = 'q'
 export const PAGE_QUERY_PARAM = 'page'
 export const PER_PAGE_QUERY_PARAM = 'perPage'
+export const SOURCE_QUERY_PARAM = 'source'
+
+export const BLOG_SOURCE_OPTIONS = ['all', 'devto', 'freecodecamp'] as const
+export type BlogSourceFilter = (typeof BLOG_SOURCE_OPTIONS)[number]
 
 export const PROJECTS_PER_PAGE_DEFAULT = 5
 export const BLOGS_PER_PAGE_DEFAULT = 5
@@ -32,7 +36,14 @@ export const DEBOUNCE_TIME_PROJECTS = 250
 export const DEBOUNCE_TIME_BLOGS = 300
 
 export const HASHNODE_USERNAME = 'shricodev'
-export const HASHNODE_BLOGS_FETCH_LIMIT = 15
+
+export const DEVTO_USERNAME = 'shricodev'
+export const DEVTO_API_BASE = 'https://dev.to/api'
+export const DEVTO_BLOGS_PER_PAGE = 30
+
+export const HASHNODE_FCC_HOST = 'freecodecamp.org/news'
+
+export const BLOG_SOURCE_PREFIX_SEPARATOR = '--'
 
 export const PROJECT_FILTER_TOPIC = 'showcase'
 

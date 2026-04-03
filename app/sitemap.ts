@@ -1,4 +1,4 @@
-import { getBlogPostsCardMeta } from '@/lib/blogs'
+import { getBlogPostsCardMeta, encodeSourceSlug } from '@/lib/blogs'
 import { getProjectsMetadata } from '@/lib/projects'
 import type { MetadataRoute } from 'next'
 import { ROUTES, BASE_URL } from '@/lib/constants'
@@ -21,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     blogPostsMetadata = blogs
       .filter(blog => blog?.slug && (blog.updatedAt || blog.publishedAt))
       .map(blog => ({
-        url: new URL(`/blogs/${blog.slug}`, BASE_URL).toString(),
+        url: new URL(`/blogs/${encodeSourceSlug(blog.source, blog.slug)}`, BASE_URL).toString(),
         lastModified: new Date(
           blog.updatedAt ?? blog.publishedAt,
         ).toISOString(),

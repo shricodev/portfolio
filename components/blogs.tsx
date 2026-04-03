@@ -26,7 +26,7 @@ export const Blogs = ({ blogsWithMeta, searchParams }: BlogsProps) => {
         <ul className='flex flex-col gap-8'>
           {blogsWithMeta?.length &&
             blogsWithMeta.map(blogMeta => (
-              <li key={`${blogMeta.slug}_${blogMeta.readTimeInMinutes}`}>
+              <li key={`${blogMeta.source}_${blogMeta.slug}`}>
                 <BlogCard blogWithMeta={blogMeta} searchParams={searchParams} />
               </li>
             ))}

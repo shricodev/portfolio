@@ -1,14 +1,21 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeftIcon, ArrowUpRightIcon } from '@/components/icons'
+import {
+  ArrowLeftIcon,
+  ArrowUpRightIcon,
+  HeartIcon,
+  CommentIcon,
+  DevToIcon,
+  FreeCodeCampIcon,
+} from '@/components/icons'
 import { formatDate, parseMDX } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import MDXContent from '@/components/mdx-content'
 import { UserAvatar } from '@/components/user-avatar'
 import {
-  getAllBlogPostsSlug,
-  getBlogPostByID,
-  getBlogPostIDBySlug,
+  getAllBlogPostSlugs,
+  getBlogPostBySlug,
+  decodeSourceSlug,
 } from '@/lib/blogs'
 import type { Metadata } from 'next'
 import { BASE_URL } from '@/lib/constants'
@@ -26,14 +33,10 @@ interface Props {
 // Static Site Generation (SSG) to improve performance on static contents.
 export async function generateStaticParams() {
   try {
-    const { slugs } = await getAllBlogPostsSlug()
+    const slugs = await getAllBlogPostSlugs()
     return slugs
-      .filter((blogSlug): blogSlug is { slug: string } =>
-        Boolean(blogSlug?.slug),
-      )
-      .map(blogSlug => ({
-        slug: blogSlug.slug,
-      }))
+      .filter((s): s is { slug: string } => Boolean(s?.slug))
+      .map(s => ({ slug: s.slug }))
   } catch (error) {
     console.error('Error generating static params for blogs:', error)
     return []
@@ -49,34 +52,17 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   }
 
   try {
-    // NOTE: I am fetching the postId by slug but not the post by id here, because
-    // I don't want to pollute the URL by including the postId anywhere like in the path or
-    // in the query params.
-    const blogPostIDBySlugResponse = await getBlogPostIDBySlug(slug)
-    if (!blogPostIDBySlugResponse)
-      throw new Error('Failed to fetch blog post ID by slug')
-
-    const { id } = blogPostIDBySlugResponse
-    // Here, we are forced to fetch the blog by ID instead of slug, because of the
-    // way Hashnode has setup their API. When we fetch the blog by slug, the API
-    // returns the old version of the blog post, even though it has been updated.
-    // So, to get the updated version, we need to fetch by ID.
-    const { post } = await getBlogPostByID(id)
-    if (!post) throw new Error('Failed to fetch blog post by ID')
+    const post = await getBlogPostBySlug(slug)
+    if (!post) throw new Error('Post not found')
 
     const { title, seo, brief, coverImage } = post
     const description =
       seo?.description || brief || DEFAULT_METADATA.description
-    const imageData = coverImage?.url
-      ? {
-          images: [{ url: coverImage.url }],
-        }
+    const imageData = coverImage
+      ? { images: [{ url: coverImage }] }
       : undefined
 
-    const baseMetadata = {
-      title,
-      description,
-    }
+    const baseMetadata = { title, description }
 
     return {
       ...baseMetadata,
@@ -111,19 +97,21 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 export default async function Page(props: Props) {
   const { slug } = await props.params
   try {
-    // NOTE: I am fetching the postId by slug but not the post by id here, because
-    // I don't want to pollute the URL by including the postId anywhere like in the path or
-    // in the query params.
-    const postIdResponse = await getBlogPostIDBySlug(slug)
-    if (!postIdResponse) notFound()
-
-    // Here, we are forced to fetch the blog by ID instead of slug, because of the
-    // way Hashnode has setup their API. When we fetch the blog by slug, the API
-    // returns the old version of the blog post, even though it has been updated.
-    const { post } = await getBlogPostByID(postIdResponse.id)
+    const post = await getBlogPostBySlug(slug)
     if (!post) notFound()
 
-    const postContent = parseMDX({ markdown: post.content.markdown })
+    const { source } = decodeSourceSlug(slug)
+
+    // Dev.to posts use raw HTML (body_html) since their markdown contains
+    // HTML tags (<br>, <u>, <details>, etc.) that MDX can't handle.
+    // Hashnode posts go through the existing MDX pipeline.
+    const useHtmlRender = source === 'devto' && post.content.html
+    const postContent = useHtmlRender
+      ? null
+      : parseMDX({ markdown: post.content.markdown })
+
+    const sourceLabel =
+      source === 'devto' ? 'Published on DEV' : 'Published on freeCodeCamp'
 
     return (
       <section className='pb-10'>
@@ -138,22 +126,38 @@ export default async function Page(props: Props) {
           <BackButton endpoint='blogs' />
         </Suspense>
 
-        {post.coverImage && post.coverImage.url ? (
+        {post.coverImage ? (
           <div className='relative mb-6 w-full'>
             <Image
-              src={post.coverImage.url}
+              src={post.coverImage}
               alt={post.title}
               width={750}
               height={380}
               className='rounded-md object-cover'
               priority
-              // Make sure that GIFs are set to unoptimized for the animation to work.
-              unoptimized={post.coverImage.url.toLowerCase().endsWith('.gif')}
+              unoptimized={post.coverImage.toLowerCase().endsWith('.gif')}
             />
           </div>
         ) : null}
 
         <header>
+          <div className='mb-3 flex items-center gap-2'>
+            {source === 'devto' ? (
+              <DevToIcon className='size-4 text-muted-foreground' />
+            ) : (
+              <FreeCodeCampIcon className='size-4 text-muted-foreground' />
+            )}
+            <span className='text-sm text-muted-foreground'>{sourceLabel}</span>
+            {post.organization && (
+              <>
+                <span className='text-sm text-muted-foreground'>·</span>
+                <span className='text-sm text-muted-foreground'>
+                  {post.organization.name}
+                </span>
+              </>
+            )}
+          </div>
+
           <h1 className='text-3xl font-bold decoration-border/75 decoration-2'>
             {post.title}
           </h1>
@@ -172,7 +176,7 @@ export default async function Page(props: Props) {
                   {post.author?.name}
                 </span>
               ) : null}
-              <span className='divider mr-1 sm:mx-1'>•</span>
+              <span className='divider mr-1 sm:mx-1'>·</span>
             </Link>
             {post.publishedAt ? (
               <span className='text-sm text-muted-foreground'>
@@ -180,6 +184,23 @@ export default async function Page(props: Props) {
               </span>
             ) : null}
           </div>
+
+          {(post.reactionsCount > 0 || post.commentsCount > 0) && (
+            <div className='mt-3 flex items-center gap-4 text-sm text-muted-foreground'>
+              {post.reactionsCount > 0 && (
+                <span className='flex items-center gap-1'>
+                  <HeartIcon className='size-4' />
+                  {post.reactionsCount} reactions
+                </span>
+              )}
+              {post.commentsCount > 0 && (
+                <span className='flex items-center gap-1'>
+                  <CommentIcon className='size-4' />
+                  {post.commentsCount} comments
+                </span>
+              )}
+            </div>
+          )}
 
           {post.tags && post.tags.length > 0 ? (
             <div className='mt-4 flex flex-row flex-wrap gap-2'>
@@ -196,28 +217,24 @@ export default async function Page(props: Props) {
           ) : null}
         </header>
         <main className='prose mt-12 max-w-3xl dark:prose-invert'>
-          <MDXContent source={postContent} />
+          {useHtmlRender ? (
+            <div
+              dangerouslySetInnerHTML={{ __html: post.content.html! }}
+            />
+          ) : (
+            <MDXContent source={postContent!} />
+          )}
         </main>
+
         <div className='mt-10 flex items-center gap-4 text-sm font-medium text-muted-foreground'>
           <div className='flex items-center gap-1 hover:text-foreground hover:transition'>
             <ArrowUpRightIcon className='size-4' />
             <a
-              href='https://dev.to/shricodev'
+              href={post.sourceUrl}
               target='_blank'
               rel='noreferrer noopener'
             >
-              DEV
-            </a>
-          </div>
-
-          <div className='flex items-center gap-1 hover:text-foreground hover:transition'>
-            <ArrowUpRightIcon className='size-4' />
-            <a
-              href='https://shricodev.hashnode.dev'
-              target='_blank'
-              rel='noreferrer noopener'
-            >
-              Hashnode
+              View on {source === 'devto' ? 'DEV' : 'freeCodeCamp'}
             </a>
           </div>
         </div>

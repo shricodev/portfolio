@@ -21,10 +21,6 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_HASHNODE_GQL_ENDPOINT: z.string().url(),
-    NEXT_PUBLIC_HASHNODE_PUBLICATION_HOST: z
-      .string()
-      .min(1, { message: 'Required' }),
-    NEXT_PUBLIC_HASHNODE_ADDITIONAL_PUBLICATION_HOSTS: z.string(),
     NEXT_PUBLIC_HASHNODE_PUBLICATION_ID: z
       .string()
       .min(1, { message: 'Required' }),
@@ -42,10 +38,6 @@ export const env = createEnv({
     RESEND_AUDIENCE_ID: process.env.RESEND_AUDIENCE_ID,
     NEXT_PUBLIC_HASHNODE_GQL_ENDPOINT:
       process.env.NEXT_PUBLIC_HASHNODE_GQL_ENDPOINT,
-    NEXT_PUBLIC_HASHNODE_PUBLICATION_HOST:
-      process.env.NEXT_PUBLIC_HASHNODE_PUBLICATION_HOST,
-    NEXT_PUBLIC_HASHNODE_ADDITIONAL_PUBLICATION_HOSTS:
-      process.env.NEXT_PUBLIC_HASHNODE_ADDITIONAL_PUBLICATION_HOSTS,
     NEXT_PUBLIC_HASHNODE_PUBLICATION_ID:
       process.env.NEXT_PUBLIC_HASHNODE_PUBLICATION_ID,
     NEXT_PUBLIC_MODE: process.env.NEXT_PUBLIC_MODE,

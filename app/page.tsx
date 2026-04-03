@@ -10,6 +10,7 @@ import {
   RECENT_PROJECTS_DEFAULT,
 } from '@/lib/constants'
 import { getBlogPostsCardMeta } from '@/lib/blogs'
+
 import { getProjectsMetadata } from '@/lib/projects'
 import type { Metadata } from 'next'
 
