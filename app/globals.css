@@ -108,4 +108,23 @@
   .prose code span {
     @apply font-medium;
   }
+
+  /* Dev.to HTML code blocks: ensure readable contrast in light mode */
+  .devto-content .highlight pre,
+  .devto-content pre {
+    @apply overflow-x-auto rounded-lg bg-zinc-900 px-5 py-4 text-sm text-zinc-100;
+  }
+  .devto-content code {
+    @apply rounded-lg px-1 py-0.5;
+  }
+  .devto-content pre code {
+    @apply bg-transparent p-0 text-inherit;
+    line-height: 1.75;
+  }
+
+  /* Hide Dev.to code block fullscreen panel (enter/exit fullscreen buttons) */
+  .devto-content [class*='highlight__panel'],
+  .devto-content [class*='fullscreen-code'] {
+    display: none !important;
+  }
 }

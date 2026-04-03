@@ -57,6 +57,38 @@ export function parseMDX({ markdown }: { markdown: string }): string {
   return parsedMarkdown
 }
 
+// Specific embed ltag classes to keep (YouTube, Twitter, CodePen, etc.)
+const KEPT_LTAG_PATTERNS = [
+  /ltag[-_]youtube/i,
+  /ltag[-_]twitter/i,
+  /ltag[-_]tweet/i,
+  /ltag[-_]codepen/i,
+  /ltag[-_]codesandbox/i,
+  /ltag[-_]replit/i,
+  /ltag[-_]stackblitz/i,
+  /ltag[-_]github/i,
+  /ltag[-_]gist/i,
+  /ltag[-_]vimeo/i,
+  /ltag[-_]spotify/i,
+]
+
+/**
+ * Sanitizes Dev.to body_html:
+ * - Removes generic {% embed %} previews (ltag__link, ltag__user, ltag__tag, etc.)
+ * - Keeps specific embeds (YouTube, Twitter, CodePen, GitHub gists, etc.)
+ */
+export function sanitizeDevtoHtml(html: string): string {
+  // Match any <div class="ltag__*"> or <div class="ltag-*"> blocks.
+  // Keep only those whose class matches a known embed type.
+  return html.replace(
+    /<div[^>]*class="ltag[^"]*"[^>]*>[\s\S]*?<\/div>\s*(?:<\/div>)*/gi,
+    match => {
+      if (KEPT_LTAG_PATTERNS.some(p => p.test(match))) return match
+      return ''
+    },
+  )
+}
+
 function removeMDXAcorns({ markdown }: { markdown: string }): string {
   const acornLineRegex = /^(.*%\[.*?\].*)$/gm
   const acornBlockRegex = /{%.*?%}/g

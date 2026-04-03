@@ -8,7 +8,7 @@ import {
   DevToIcon,
   FreeCodeCampIcon,
 } from '@/components/icons'
-import { formatDate, parseMDX } from '@/lib/utils'
+import { formatDate, parseMDX, sanitizeDevtoHtml } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import MDXContent from '@/components/mdx-content'
 import { UserAvatar } from '@/components/user-avatar'
@@ -106,6 +106,9 @@ export default async function Page(props: Props) {
     // HTML tags (<br>, <u>, <details>, etc.) that MDX can't handle.
     // Hashnode posts go through the existing MDX pipeline.
     const useHtmlRender = source === 'devto' && post.content.html
+    const sanitizedHtml = useHtmlRender
+      ? sanitizeDevtoHtml(post.content.html!)
+      : null
     const postContent = useHtmlRender
       ? null
       : parseMDX({ markdown: post.content.markdown })
@@ -219,7 +222,8 @@ export default async function Page(props: Props) {
         <main className='prose mt-12 max-w-3xl dark:prose-invert'>
           {useHtmlRender ? (
             <div
-              dangerouslySetInnerHTML={{ __html: post.content.html! }}
+              className='devto-content'
+              dangerouslySetInnerHTML={{ __html: sanitizedHtml! }}
             />
           ) : (
             <MDXContent source={postContent!} />
