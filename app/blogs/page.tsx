@@ -29,10 +29,11 @@ export const metadata: Metadata = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined }
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const resolvedSearchParams = await searchParams
   const { perPageQuery, pageQuery, searchQuery } = parseQueryParams({
-    searchParams,
+    searchParams: resolvedSearchParams,
     defaultPerPage: BLOGS_PER_PAGE_DEFAULT,
     endpoint: 'blogs',
   })
@@ -62,7 +63,7 @@ export default async function Page({
   const totalPages = Math.max(Math.ceil(blogslength / perPageQuery), 0)
 
   if (totalPages > 0 && pageQuery > totalPages) {
-    const params = new URLSearchParams(searchParams as Record<string, string>)
+    const params = new URLSearchParams(resolvedSearchParams as Record<string, string>)
     params.set(PAGE_QUERY_PARAM, String(totalPages))
     redirect(`/blogs?${params.toString()}`)
   }

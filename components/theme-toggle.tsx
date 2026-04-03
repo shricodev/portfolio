@@ -10,6 +10,7 @@ export const ThemeToggle = () => {
   const [mounted, setMounted] = useState<boolean>(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time hydration guard
     setMounted(true)
   }, [])
 

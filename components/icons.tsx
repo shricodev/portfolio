@@ -1,7 +1,7 @@
 import { SVGProps } from 'react'
 
 export function Loader(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -16,7 +16,7 @@ export function Loader(
 }
 
 export function SunIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -35,7 +35,7 @@ export function SunIcon(
 }
 
 export function MoonIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -54,7 +54,7 @@ export function MoonIcon(
 }
 
 export function StarIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -69,7 +69,7 @@ export function StarIcon(
 }
 
 export function BookIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -90,7 +90,7 @@ export function BookIcon(
 }
 
 export function FilterIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -118,7 +118,7 @@ export function FilterIcon(
 }
 
 export function ArrowUpRightIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -144,7 +144,7 @@ export function ArrowUpRightIcon(
 }
 
 export function ArrowLeftIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -165,7 +165,7 @@ export function ArrowLeftIcon(
 }
 
 export function CalendarIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -186,7 +186,7 @@ export function CalendarIcon(
 }
 
 export function CrossIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -201,7 +201,7 @@ export function CrossIcon(
 }
 
 export function ChartIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -222,7 +222,7 @@ export function ChartIcon(
 }
 
 export function UsersGroup(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -241,7 +241,7 @@ export function UsersGroup(
 }
 
 export function AlertIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -262,7 +262,7 @@ export function AlertIcon(
 }
 
 export function HamburgerMenuIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -277,7 +277,7 @@ export function HamburgerMenuIcon(
 }
 
 export function RSSIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -303,7 +303,7 @@ export function RSSIcon(
 }
 
 export function GitHubIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -328,7 +328,7 @@ export function GitHubIcon(
 }
 
 export function TwitterIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -343,7 +343,7 @@ export function TwitterIcon(
 }
 
 export function HashnodeIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -364,7 +364,7 @@ export function HashnodeIcon(
 }
 
 export function LinkedInIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -379,7 +379,7 @@ export function LinkedInIcon(
 }
 
 export function DevToIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -394,7 +394,7 @@ export function DevToIcon(
 }
 
 export function LeetCodeIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -410,7 +410,7 @@ export function LeetCodeIcon(
 }
 
 export function GeeksForGeeksIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -433,7 +433,7 @@ export function GeeksForGeeksIcon(
 }
 
 export function CodingNinjasIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -456,7 +456,7 @@ export function CodingNinjasIcon(
 }
 
 export function InstagramIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -473,7 +473,7 @@ export function InstagramIcon(
 }
 
 export function CourseraIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -493,7 +493,7 @@ export function CourseraIcon(
 }
 
 export function DiscordIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg
@@ -518,7 +518,7 @@ export function DiscordIcon(
 }
 
 export function GmailIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>,
+  props: SVGProps<SVGSVGElement>,
 ) {
   return (
     <svg

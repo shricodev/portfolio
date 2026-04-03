@@ -14,9 +14,9 @@ import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 
 interface Props {
-  params: {
+  params: Promise<{
     projectName: string
-  }
+  }>
 }
 
 // Static Site Generation (SSG) to improve performance on static contents.
@@ -33,7 +33,8 @@ export async function generateStaticParams() {
   }
 }
 
-export function generateMetadata({ params: { projectName } }: Props): Metadata {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const { projectName } = await props.params
   const DEFAULT_METADATA = {
     title: projectName,
     description: 'A project by Shrijal Acharya showcasing work and skills.',
@@ -82,7 +83,8 @@ export function generateMetadata({ params: { projectName } }: Props): Metadata {
   }
 }
 
-export default function Page({ params: { projectName } }: Props) {
+export default async function Page(props: Props) {
+  const { projectName } = await props.params
   try {
     const project = getProjectByTitle({ title: projectName })
     if (!project) notFound()

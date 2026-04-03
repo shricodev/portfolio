@@ -18,9 +18,9 @@ import { Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 
 interface Props {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 // Static Site Generation (SSG) to improve performance on static contents.
@@ -40,9 +40,8 @@ export async function generateStaticParams() {
   }
 }
 
-export async function generateMetadata({
-  params: { slug },
-}: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const { slug } = await props.params
   const DEFAULT_METADATA = {
     title: 'Blog by Shrijal Acharya',
     description:
@@ -109,7 +108,8 @@ export async function generateMetadata({
   }
 }
 
-export default async function Page({ params: { slug } }: Props) {
+export default async function Page(props: Props) {
+  const { slug } = await props.params
   try {
     // NOTE: I am fetching the postId by slug but not the post by id here, because
     // I don't want to pollute the URL by including the postId anywhere like in the path or

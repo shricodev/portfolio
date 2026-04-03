@@ -25,13 +25,14 @@ export const metadata: Metadata = {
     'Collection of my selected public repositories fetched through GitHub Actions.',
 }
 
-export default function Page({
+export default async function Page({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined }
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const resolvedSearchParams = await searchParams
   const { perPageQuery, pageQuery, searchQuery } = parseQueryParams({
-    searchParams,
+    searchParams: resolvedSearchParams,
     defaultPerPage: PROJECTS_PER_PAGE_DEFAULT,
     endpoint: 'projects',
   })
@@ -60,7 +61,7 @@ export default function Page({
 
   // Redirect if pageQuery exceeds totalPages
   if (totalPages > 0 && pageQuery > totalPages) {
-    const params = new URLSearchParams(searchParams as Record<string, string>)
+    const params = new URLSearchParams(resolvedSearchParams as Record<string, string>)
     params.set(PAGE_QUERY_PARAM, String(totalPages))
     redirect(`/projects?${params.toString()}`)
   }

@@ -38,7 +38,7 @@ async function sendEmailResend(data: TContactFormSchema) {
     to: OTHER_EMAIL,
     cc: [senderEmail, email],
     subject: 'Portfolio: Contact Form Submission',
-    react: ContactFormEmailTemplate({ name, email, message }),
+    react: ContactFormEmailTemplate({ name, email, message }) as React.ReactElement,
   })
 }
 
