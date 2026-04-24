@@ -1,0 +1,479 @@
+---
+title: "gophercast"
+description: "🎵 Stream music to every device on your LAN, all playing at the same time 💥"
+clone_url: "https://github.com/shricodev/gophercast.git"
+language: "Go"
+homepage: ""
+topics:
+  - "audio-player"
+  - "bubbletea"
+  - "cobra"
+  - "golang"
+  - "gophercast"
+  - "showcase"
+  - "tui"
+  - "websocket"
+created_at: "2025-07-05T17:56:01Z"
+updated_at: "2026-04-03T12:12:24Z"
+---
+
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/MariaLetta/free-gophers-pack/master/characters/png/52.png" width="250" alt="Gopher with network issues" />
+
+# GopherCast
+
+**Radio-like synchronized audio streaming over LAN**
+
+[![Go Version](https://img.shields.io/badge/Go-1.24.4-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-lightgrey?style=flat)]()
+[![WebSocket](https://img.shields.io/badge/Transport-WebSocket-informational?style=flat)]()
+[![Built with Bubble Tea](https://img.shields.io/badge/TUI-Bubble%20Tea-pink?style=flat&logo=charm)](https://github.com/charmbracelet/bubbletea)
+
+</div>
+
+---
+
+GopherCast turns any machine on your local network into a synchronized speaker. You run one server, every other device connects as a client, and they all start playing audio at precisely the same moment. No drift, no desync, no buffering banners.
+
+Think of it as a personal audio player over multiple devices (in sync), built in Go, over plain WebSockets, with a terminal UI.
+
+---
+
+## Table of Contents
+
+- [How It Works](#how-it-works)
+- [Features](#features)
+- [Platform Support](#platform-support)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Serving Audio](#serving-audio)
+  - [Connecting as a Client](#connecting-as-a-client)
+- [Synchronization Model](#synchronization-model)
+- [Single-Machine Multi-Terminal Mode](#single-machine-multi-terminal-mode)
+- [Why WebSocket over WebRTC or UDP?](#why-websocket-over-webrtc-or-udp)
+- [Architecture](#architecture)
+- [Configuration](#configuration)
+- [Logs](#logs)
+- [Development](#development)
+- [Known Limitations](#known-limitations)
+- [License](#license)
+
+---
+
+## How It Works
+
+At its core, GopherCast is a streaming pipeline over WebSocket:
+
+1. The server decodes MP3 files to raw PCM audio using [go-mp3](https://github.com/hajimehoshi/go-mp3).
+2. PCM frames are paced to real time and broadcast to all connected clients as WebSocket binary messages.
+3. Each client receives the raw audio bytes and feeds them directly to its local audio output via [oto/v3](https://github.com/ebitengine/oto).
+4. Before playback begins, the server sends a `start_at_ns` Unix nanosecond timestamp to every client. Clients sleep until that wall-clock time, then begin playing in unison.
+
+Because clients receive raw PCM rather than compressed audio, there is no per-client decoding step.
+
+---
+
+## Features
+
+- **Synchronized multi-device playback:** all clients start within ~1ms of each other on NTP-synced LAN
+- **YouTube support:** provide a video URL or full playlist URL and GopherCast downloads and converts audio via `yt-dlp` before serving
+- **Bubble Tea TUI:** interactive terminal UI for source selection, download progress, track picking, lobby management, and live stream status
+- **Local directory streaming:** point it at a folder of MP3 files and go
+- **Raw PCM file output:** connect with `--output recording.pcm` to capture the audio stream to disk instead of playing it
+- **Lobby phase:** clients join before playback starts and mid-stream joins are explicitly rejected so latecomers never desync the room
+- **Playlist shuffle:** `--random` flag randomizes track order
+- **Structured JSON logs:** written to `~/.gophercast/logs/` so they never interfere with the TUI
+
+---
+
+## Platform Support
+
+| Platform | Status          | Notes                                                                            |
+| -------- | --------------- | -------------------------------------------------------------------------------- |
+| Linux    | Fully supported | Tested on Fedora/Ubuntu via ALSA/PipeWire                                        |
+| macOS    | Should work     | oto supports CoreAudio, not regularly tested                                     |
+| Windows  | Likely broken   | oto's Windows backend has known issues with the PCM pipeline used here, untested |
+
+GopherCast relies on [oto/v3](https://github.com/ebitengine/oto) for audio output. On Linux it requires either ALSA or PipeWire. On macOS it uses CoreAudio directly with no extra dependencies.
+
+---
+
+## Prerequisites
+
+### System audio library (Linux only)
+
+**Fedora / RHEL / CentOS:**
+
+```bash
+sudo dnf install alsa-lib-devel
+```
+
+**Debian / Ubuntu:**
+
+```bash
+sudo apt install libasound2-dev
+```
+
+### yt-dlp (required for YouTube features)
+
+```bash
+pip install yt-dlp
+# or
+pipx install yt-dlp
+```
+
+`yt-dlp` must be available on your `PATH`. If you only stream local files, you do not need it.
+
+### Go 1.24+
+
+Download from [go.dev/dl](https://go.dev/dl/) or use your system package manager.
+
+---
+
+## Installation
+
+### Build from source
+
+```bash
+git clone https://github.com/shricodev/gophercast
+cd gophercast
+make build
+```
+
+The binary is written to `bin/gophercast`. You can copy it to anywhere on your `PATH`:
+
+```bash
+sudo cp bin/gophercast /usr/local/bin/
+```
+
+### Run directly
+
+```bash
+make run
+```
+
+---
+
+## Usage
+
+GopherCast has two subcommands: `serve` and `play`.
+
+---
+
+### Serving Audio
+
+The `serve` command launches the interactive TUI. From there you pick a source, optionally select tracks, open a lobby, and start streaming.
+
+```bash
+gophercast serve
+```
+
+You can also pre-configure the source with flags to skip the source-selection step:
+
+```
+Flags:
+  -d, --dir-to-mp3 string     Path to a directory containing MP3 files
+  -y, --youtube string        YouTube video URL
+  -p, --yt-playlist string    YouTube playlist URL
+      --random                Shuffle track order (works with --dir-to-mp3 and --yt-playlist)
+```
+
+**Stream a local music directory:**
+
+```bash
+gophercast serve --dir-to-mp3 ~/Music
+```
+
+**Stream a YouTube video:**
+
+```bash
+gophercast serve --youtube "https://youtube.com/watch?v=..."
+```
+
+**Stream a YouTube playlist in random order:**
+
+```bash
+gophercast serve --yt-playlist "https://youtube.com/playlist?list=..." --random
+```
+
+Once the TUI opens, the flow is:
+
+1. Select a source (if not provided via flags)
+2. Wait for any downloads to complete
+3. Choose whether to auto-select all tracks or pick them manually
+4. The lobby opens. Share the server address shown on screen with your clients
+5. When everyone has connected, press Enter to begin streaming
+
+---
+
+### Connecting as a Client
+
+On each device that should play audio, run:
+
+```bash
+gophercast play --host <ip> --port 8080
+```
+
+```
+Flags:
+      --host string       Server IP address
+      --port int          Server port (default: 8080)
+  -n, --name string       Display name shown in the server lobby (default: hostname)
+  -o, --output string     Write raw PCM to this file instead of playing audio
+      --latency int       Override auto-detected audio latency in milliseconds
+```
+
+**Connect with a custom name:**
+
+```bash
+gophercast play --host <ip> --port 8080 --name "Kitchen Speaker"
+```
+
+**Capture audio to a file instead of playing:**
+
+```bash
+gophercast play --host <ip --port 8080 --output session.pcm
+```
+
+**Override latency if your device is consistently out of sync:**
+
+```bash
+gophercast play --host <ip --port 8080 --latency 120
+```
+
+The client must connect before the server host starts playback. Once streaming begins, any new connection attempt is rejected with a clear message.
+
+---
+
+## Synchronization Model
+
+Getting multiple speakers to start at the same millisecond is the central challenge GopherCast solves. Here is how:
+
+**Initial sync (wall-clock alignment)**
+
+When the host starts playback, the server calculates a future start time:
+
+```
+target = now + lead_time + max_client_latency
+```
+
+Each client receives a personalized `start_at_ns` (Unix nanoseconds) adjusted for its individual audio pipeline latency. A client with a 150ms pipeline latency gets an earlier timestamp than one with a 50ms latency, so the actual sound exits both speakers at the same wall-clock moment. The default lead time is 750ms for the first track and 500ms for subsequent tracks (the audio sink is already warm).
+
+This assumes all machines are NTP-synchronized. On a typical LAN, NTP keeps clocks within 1ms of each other, which is well within the threshold of human perception (~20ms for audio onset differences).
+
+> [!NOTE]
+> But the audio kept drifting when multiple clients were connected for a long time. I wasn’t familiar with the issue, and Sonnet suggested the cause. This part was completely vibe-coded with Sonnet 4.6. Need to check the impl better.
+
+Even with a perfect start, clocks drift. GopherCast clients measure their own drift every 50 audio frames (~1.15 seconds) by comparing samples written to wall-clock elapsed time. If drift exceeds 2ms:
+
+- **Behind (real time is ahead of playback):** trim a few samples from the end of the current chunk
+- **Ahead (playback is ahead of real time):** duplicate a few samples at the end of the current chunk
+
+The correction is capped at 32 samples (~0.7ms) per interval to prevent audible glitches. This keeps all clients aligned across playlists that run for hours.
+
+---
+
+## Single-Machine Multi-Terminal Mode
+
+GopherCast is designed for multiple physical devices, but you can run both the server and multiple clients on the same machine. Each client terminal opens its own audio output via oto, which most systems will mix together through the audio server (PipeWire, PulseAudio, CoreAudio).
+
+The practical effect is that the same audio plays from multiple output streams simultaneously, amplifying the overall volume through software mixing. This is not the intended use case, and audio quality may degrade at higher client counts due to mixing artifacts, but it works.
+
+```bash
+# Terminal 1: start the server
+gophercast serve
+
+# Terminal 2, 3, 4...: connect as clients on the same machine
+gophercast play --host 127.0.0.1 --port 8080 --name "instance-2"
+gophercast play --host 127.0.0.1 --port 8080 --name "instance-3"
+```
+
+Note that oto creates a new audio pipeline per client process. Whether the OS mixes them cleanly depends on your audio subsystem. PipeWire and PulseAudio handle this well. Direct ALSA access may not.
+
+---
+
+## Why WebSocket over WebRTC or UDP?
+
+Both WebRTC and RTP/UDP would technically work, but they solve problems GopherCast simply does not have. WebRTC is designed for peer-to-peer meshes, and the open internet. RTP/UDP's no-head-of-line-blocking advantage is basically irrelevant on a LAN where packet loss is near zero. Honestly, I have never worked with WebRTC before and I am not comfortable with it yet, so reaching for it on a personal project felt like the wrong call. WebSocket keeps it simple, ships control and audio on one connection, and uses a library I actually know. Good enough for a LAN tool.
+
+> [!NOTE]
+> If I ever get comfortable with WebRTC or RTP/UDP and is practical enough, this might migrate to one of those transports. No plans for now though.
+
+---
+
+## Architecture
+
+### Streaming Pipeline
+
+```
+MP3 file
+   |
+   | go-mp3 decodes to raw PCM
+   v
+PCM chunks (4096 bytes = ~23ms at 44.1kHz)
+   |
+   | server paces output to real time
+   | wall-clock drift correction
+   v
+WebSocket binary frames
+  [4B seq] [8B sample_offset] [4096B PCM payload]
+   |
+   | broadcast to all clients
+   v
+Client audio buffer
+   |
+   | waits until start_at_ns
+   v
+oto audio output (16-bit signed LE, stereo, 44.1kHz)
+```
+
+### Server State Machine
+
+```
+lobby  -->  playing  -->  stopped
+```
+
+- `lobby`: accepts new client connections, waits for host to start playback
+- `playing`: streams audio, rejects new connections
+- `stopped`: playlist ended or host quit
+
+### Wire Protocol
+
+**Control messages** travel as JSON over WebSocket text frames using an envelope format:
+
+```json
+{ "type": "start_playback", "data": { ... } }
+```
+
+Message types: `hello`, `server_state`, `client_list`, `start_playback`, `stop_playback`, `track_change`, `reject`
+
+**Audio frames** travel as WebSocket binary frames with a 12-byte header:
+
+```
+| 4 bytes: sequence number  |
+| 8 bytes: sample offset    |
+| N bytes: raw PCM payload  |
+```
+
+### Package Layout
+
+```
+cmd/           Cobra CLI commands: root, serve, play
+server/        AudioServer, hub, WebSocket handlers, broadcaster, streamer
+client/        AudioClient, AudioSink interface, drift corrector
+tui/           Bubble Tea TUI (model, view, keys, messages, server handlers)
+pkg/
+  protocol/    Wire protocol types, frame format, marshal helpers
+  types/       Core domain types: Track, Playlist, Path, Source
+internal/
+  downloader/  yt-dlp wrapper with concurrent worker pool
+  playlist/    Directory scanner, builds Playlist from MP3 files
+  logger/      Structured JSON logger (log/slog) with file output
+  testutil/    Assertion helpers for table-driven tests
+```
+
+---
+
+## Configuration
+
+GopherCast uses a YAML config file at `$HOME/.gophercast.yaml`. It is optional and all settings can be passed as flags instead.
+
+```yaml
+# $HOME/.gophercast.yaml
+```
+
+You can also point to a different config file:
+
+```bash
+gophercast --config /path/to/config.yaml serve
+```
+
+---
+
+## Logs
+
+Logs are written in structured JSON format to:
+
+```
+~/.gophercast/logs/YYYY/MM/DD.json
+```
+
+They are intentionally written to a file rather than stdout so they never corrupt the Bubble Tea TUI display. Each log entry includes the timestamp, level, message, and relevant structured fields such as `client_id`, `event`, `port`, and `error`.
+
+To follow logs in real time while the server is running:
+
+```bash
+tail -f ~/.gophercast/logs/$(date +%Y)/$(printf '%02d' $(date +%-m))/$(date +%d).json | jq # make sure to have jq installed
+```
+
+---
+
+## Development
+
+```bash
+make build          # Build binary to bin/gophercast
+make run            # Build and run
+make serve          # Build and serve ~/Music as default directory
+make fmt            # Format all Go code
+make test           # Run all tests
+make test-verbose   # Run tests with verbose output
+make clean          # Remove compiled binary
+
+# Run a single test by name
+go test -v -run TestFunctionName ./path/to/package/...
+```
+
+### External tool dependency
+
+The downloader tests mock `yt-dlp` calls via the context cancellation path. If you want to run an end-to-end download test manually, ensure `yt-dlp` is installed and on your `PATH`.
+
+### Adding a new audio sink
+
+Implement the `AudioSink` interface in `client/`:
+
+```go
+type AudioSink interface {
+    Init(sampleRate, channels int) error
+    Write(data []byte)
+    Close()
+    Latency() time.Duration
+}
+```
+
+Pass your implementation to `NewAudioClient` and it will receive the raw PCM stream.
+
+---
+
+## Known Limitations
+
+- **Mid-stream joins are not supported.** If you connect after the host has started playback, the server will reject your connection. You must connect during the lobby phase.
+- **MP3 only.** The server uses go-mp3 which decodes MP3 files. Other formats (FLAC, AAC, OGG) are not supported without additional decoder plumbing.
+- **LAN only.** The synchronization model relies on NTP-aligned clocks. Over the internet, clock skew and variable latency would break the wall-clock sync approach. There is no NAT traversal.
+- **Windows (also MacOS) is untested.** oto's Windows backend may work, but the project has not been tested there. ALSA-specific build tags are not present, so a build attempt on Windows might succeed or fail depending on the oto version.
+- **One server per session.** There is no multi-room support. Each `gophercast serve` instance handles one playlist and one group of clients.
+
+---
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE).
+
+Copyright 2025 shrijal.acharya@gmail.com
+
+---
+
+<div align="center">
+
+```
+█▀▀ █▀█ █▀█ █ █ █▀▀ █▀█ █▀▀ ▄▀█ █▀ ▀█▀
+█▄█ █▄█ █▀▀ █▀█ ██▄ █▀▄ █▄▄ █▀█ ▄█  █
+```
+
+_Built with Go, and Bubble Tea_
+
+[![Go](https://img.shields.io/badge/Powered%20by-Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev)
+
+</div>

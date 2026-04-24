@@ -1,0 +1,65 @@
+---
+title: 'resume-builder-openai'
+description:
+  'Generate your resume with GPT in minutes, with email support from Trigger.dev
+  and resend 🚀😻'
+clone_url: 'https://github.com/shricodev/resume-builder-openai.git'
+language: 'TypeScript'
+homepage: ''
+topics:
+  - 'authentication'
+  - 'cloud-storage'
+  - 'cookie-authentication'
+  - 'file-upload'
+  - 'gpt'
+  - 'nextjs13'
+  - 'openai'
+  - 'resend'
+  - 's3-bucket'
+  - 'supabase'
+  - 'triggerdev'
+
+  - 'showcase'
+created_at: '2023-11-03T15:47:25Z'
+updated_at: '2024-04-24T11:31:26Z'
+---
+
+## Clone and run locally
+
+1. You'll first need a Supabase project which can be made
+   [via the Supabase dashboard](https://database.new)
+
+2. Clone the repository.
+
+3. Use `cd` to change into the app's directory
+
+4. Rename `.env.local.example` to `.env.local` and update all the `.env`
+   variables:
+
+```bash
+TRIGGER_API_KEY=
+NEXT_PUBLIC_TRIGGER_API_URL=
+NEXT_PUBLIC_TRIGGER_PUBLIC_API_KEY=
+
+OPENAI_API_KEY=
+
+NEXT_PUBLIC_SUPABASE_PROJECT_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_URL=
+
+RESEND_API_KEY=
+
+```
+
+Both `NEXT_PUBLIC_SUPABASE_PROJECT_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can
+be found in
+[your Supabase project's API settings](https://app.supabase.com/project/_/settings/api)
+
+5. You can now run the Next.js local development server along with Trigger.dev:
+
+```bash
+npm run dev
+npx @trigger.dev/cli@latest dev
+```
+
+The project should now be running on [localhost:3000](http://localhost:3000/).

@@ -1,0 +1,94 @@
+name: Fetch Public Repos README's
+
+on:
+  schedule:
+    # Run once every single day.
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+
+jobs:
+  fetch-readmes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          repository: shricodev/portfolio
+
+      - name: Fetch repository list and README's with metadata
+        env:
+          TARGET_USER: shricodev
+          TARGET_FOLDER: './content/projects'
+        run: |
+          mkdir -p "$TARGET_FOLDER"
+
+          # Fetch list of public repos
+          repos=$(curl -s "https://api.github.com/users/$TARGET_USER/repos?per_page=300" | jq -r '.[] | select(.private == false and .fork == false and (.topics | index("showcase") != null)) | .name' | uniq)
+
+          # Fetch README's and metadata
+          for repo in $repos; do
+            readme_file="$TARGET_FOLDER/${repo}_README.mdx"
+
+            # Skip fetching if README already exists
+            if [[ -f "$readme_file" ]]; then
+              echo "README for $repo already exists, skipping..."
+              continue
+            fi
+
+            # Fetch repository metadata
+            repo_metadata=$(curl -s "https://api.github.com/repos/$TARGET_USER/$repo")
+            title=$(echo "$repo_metadata" | jq -r '.name')
+            description=$(echo "$repo_metadata" | jq -r '.description // ""')
+            clone_url=$(echo "$repo_metadata" | jq -r '.clone_url')
+            language=$(echo "$repo_metadata" | jq -r '.language // ""')
+            homepage=$(echo "$repo_metadata" | jq -r '.homepage // ""')
+            topics=$(echo "$repo_metadata" | jq -r '.topics | join(", ")')
+            created_at=$(echo "$repo_metadata" | jq -r '.created_at')
+            updated_at=$(echo "$repo_metadata" | jq -r '.updated_at')
+
+            # Check if README exists on GitHub
+            status_code=$(curl -o /dev/null -s -w "%{http_code}" https://raw.githubusercontent.com/$TARGET_USER/$repo/main/README.md)
+
+            if [ "$status_code" -eq 200 ]; then
+              # Fetch README content if it exists
+              readme_content=$(curl -s https://raw.githubusercontent.com/$TARGET_USER/$repo/main/README.md)
+
+              # Write metadata and README content to file
+              {
+                echo "---"
+                echo "title: \"$title\""
+                echo "description: \"$description\""
+                echo "clone_url: \"$clone_url\""
+                echo "language: \"$language\""
+                echo "homepage: \"$homepage\""
+                echo "topics:"
+                for topic in $(echo "$topics" | tr ',' '\n'); do
+                  echo "  - \"$topic\""
+                done
+                echo "created_at: \"$created_at\""
+                echo "updated_at: \"$updated_at\""
+                echo "---"
+                echo ""
+                echo "$readme_content"
+              } > "$readme_file"
+            else
+              echo "No README found for $repo, skipping..."
+            fi
+          done
+
+      - name: Commit Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          # Commit if there are any changes
+          if ! git diff --cached --quiet; then
+            git commit -m "Update READMEs with meta and content from public repos"
+            git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/shricodev/portfolio.git HEAD:main
+          else
+            echo "No changes to commit."
+          fi
