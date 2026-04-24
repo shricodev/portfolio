@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portfolio
 
-## Getting Started
+This repository contains the source code for my Next.js portfolio. Visit the
+website to learn more about my work and experiences, sign up for my newsletter,
+discuss potential opportunities, or schedule a 1:1 meeting.
 
-First, run the development server:
+[Live Demo](https://www.techwithshrijal.com) ·
+[Report Bug](https://github.com/shricodev/portfolio/issues) ·
+[Request Feature](https://github.com/shricodev/portfolio/issues)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+![Hero Page of Shrijal Acharya](https://github.com/user-attachments/assets/bfb2b98e-7f65-46d5-ae05-548b25745f7c)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🪄 Tech Stacks
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- [`Next.js`](https://nextjs.org): A React framework for server-side rendering,
+  static site generation, and more.
+- [`Tailwind CSS`](https://tailwindcss.com): A utility-first CSS framework for
+  building responsive designs.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- [`Cal.com`](https://cal.com): An open-source scheduling platform for booking
+  and managing meetings.
 
-## Learn More
+- [`GraphQL`](https://graphql.org): A query language and runtime for APIs, with
+  flexible data fetching.
 
-To learn more about Next.js, take a look at the following resources:
+- [`next-mdx-remote`](https://github.com/hashicorp/next-mdx-remote): A library
+  to render Markdown/MDX content in Next.js apps.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [`gray-matter`](https://github.com/jonschlinkert/gray-matter): A parser for
+  YAML front matter in Markdown files.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [`Zod`](https://zod.dev): A TypeScript-first schema declaration and validation
+  library.
+- [`TypeScript`](https://www.typescriptlang.org): A strongly typed programming
+  language that builds on JavaScript.
 
-## Deploy on Vercel
+- [`Resend`](https://resend.com): An API for sending transactional emails with
+  templates support.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [`Sugar-High`](https://www.npmjs.com/package/sugar-high): A lightweight syntax
+  highlighting library.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [`Vercel`](https://vercel.com): A cloud platform for hosting and deploying web
+  applications.
+- [`Cloudflare`](https://www.cloudflare.com): A global network for speed and
+  security.
+
+## 🛠️ Installation
+
+- **Clone the Repository (use HTTPS if preferred)**
+
+  ```bash
+  git clone git@github.com:shricodev/portfolio.git
+  ```
+
+- **Navigate to the Directory**
+
+  ```bash
+  cd portfolio
+  ```
+
+- **Install Dependencies**
+
+  ```bash
+  npm install
+  ```
+
+- **Start the Development Server**
+
+  ```bash
+  npm run dev
+  ```
+
+## 🚀 Showcase
+
+![Blogs and Projects page of Shrijal Acharya](https://github.com/user-attachments/assets/94c4fcc7-31b8-4bd6-96e0-10e0b5620a14)
+![Schedule a 1:1 Meeting with Shrijal Acharya](https://github.com/user-attachments/assets/72f3c8ce-4d1e-4ca3-96bd-b39c2d64636d)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+- Fork the Project
+- Create your Feature Branch (`git checkout -b feature/amazing-feature`)
+- Commit your Changes (`git commit -m 'Add some amazing-feature'`)
+- Push to the Branch (`git push origin feature/amazing-feature`)
+- Open a Pull Request
+
+## 💬 Contact
+
+Feel free to reach out to me through any of the social handles listed here
+(LinkedIn and Email are preferred):
+[https://linktr.ee/shricodev](https://linktr.ee/shricodev)
+
+## 🛡️ License
+
+This project is licensed under the MIT License - see the
+[LICENSE](https://github.com/shricodev/portfolio/blob/main/LICENSE) file for
+details.
+
+## 👋 Support
+
+For support, email
+[contact@techwithshrijal.com](mailto:contact@techwithshrijal.com) or reach out
+to me on socials.
