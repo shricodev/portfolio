@@ -118,45 +118,50 @@
   span.divider {
     @apply text-muted-foreground;
   }
+}
 
-  .prose pre {
-    @apply overflow-x-auto rounded-lg border border-border px-5 py-4 text-sm;
-    background: hsl(var(--muted));
-  }
-  .prose pre code {
-    @apply bg-transparent p-0;
-    display: grid;
-    line-height: 1.75;
-    counter-reset: line;
-  }
-  .prose pre code > [data-line] {
-    @apply px-0;
-  }
-  .prose pre code > .line {
-    @apply block;
-  }
+/* Prose / code-block styling lives outside @layer base because @tailwindcss/typography
+ * injects its rules into @layer utilities, and layered utilities always beat layered
+ * base regardless of selector specificity. Unlayered styles win against any layer. */
 
-  .prose :not(pre) > code {
-    @apply rounded border border-border bg-muted px-1 py-0.5 font-medium text-foreground;
-    font-size: 0.875em;
-  }
-  .prose :not(pre) > code::before,
-  .prose :not(pre) > code::after {
-    content: none;
-  }
+.prose {
+  --tw-prose-pre-bg: hsl(var(--muted));
+  --tw-prose-pre-code: hsl(var(--foreground));
+  --tw-prose-invert-pre-bg: hsl(var(--muted));
+  --tw-prose-invert-pre-code: hsl(var(--foreground));
+}
 
-  html.dark .prose pre,
-  html.dark .prose pre span {
-    color: var(--shiki-dark);
-  }
-  html.dark .prose pre {
-    background-color: var(--shiki-dark-bg);
-  }
-  html:not(.dark) .prose pre,
-  html:not(.dark) .prose pre span {
-    color: var(--shiki-light);
-  }
-  html:not(.dark) .prose pre {
-    background-color: var(--shiki-light-bg);
-  }
+.prose pre {
+  @apply overflow-x-auto rounded-lg border border-border px-5 py-4 text-sm;
+}
+.prose pre code {
+  @apply bg-transparent p-0;
+  display: grid;
+  line-height: 1.75;
+  counter-reset: line;
+}
+.prose pre code > [data-line] {
+  @apply px-0;
+}
+.prose pre code > .line {
+  @apply block;
+}
+
+.prose :not(pre) > code {
+  @apply rounded border border-border bg-muted px-1 py-0.5 font-medium text-foreground;
+  font-size: 0.875em;
+}
+.prose :not(pre) > code::before,
+.prose :not(pre) > code::after {
+  content: none;
+}
+
+/* rehype-pretty-code emits --shiki-light and --shiki-dark inline on each token
+ * span; pick the right one per theme. keepBackground is false, so the pre
+ * background comes from --tw-prose-pre-bg above, not from shiki. */
+.prose pre span {
+  color: var(--shiki-light);
+}
+.dark .prose pre span {
+  color: var(--shiki-dark);
 }

@@ -133,7 +133,7 @@ export default async function Page(props: Props) {
             alt={post.title}
             width={750}
             height={380}
-            className='rounded-md object-cover'
+            className='h-auto rounded-md object-cover'
             priority
             unoptimized={post.coverImage.toLowerCase().endsWith('.gif')}
           />

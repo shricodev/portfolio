@@ -22,7 +22,7 @@ export function ZoomableImage(props: ComponentProps<'img'>) {
         height={400}
         unoptimized={imageSrc.toLowerCase().endsWith('.gif')}
         alt={props.alt ?? 'Image'}
-        className='mx-auto rounded-md'
+        className='mx-auto h-auto rounded-md'
       />
     </Zoom>
   )
