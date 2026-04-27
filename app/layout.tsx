@@ -6,6 +6,7 @@ import { Footer } from '@/components/footer'
 import { BASE_URL } from '@/lib/constants'
 import { Toaster } from '@/components/ui/sonner'
 import 'react-tweet/theme.css'
+import 'react-medium-image-zoom/dist/styles.css'
 import './globals.css'
 
 const geistSans = localFont({

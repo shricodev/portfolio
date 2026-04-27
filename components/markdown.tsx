@@ -1,8 +1,8 @@
 import * as prod from 'react/jsx-runtime'
-import Image from 'next/image'
 import { unified, type PluggableList } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
+import remarkUnwrapImages from 'remark-unwrap-images'
 import remarkRehype from 'remark-rehype'
 import rehypeRaw from 'rehype-raw'
 import rehypePrettyCode from 'rehype-pretty-code'
@@ -14,6 +14,7 @@ import {
   TweetEmbed,
   YouTubeEmbed,
 } from '@/components/mdx/embeds'
+import { ZoomableImage } from '@/components/mdx/zoomable-image'
 
 interface MarkdownProps {
   source: string
@@ -43,28 +44,6 @@ function CustomAnchor({ projectName, href, ...props }: AnchorProps) {
       target='_blank'
       rel='noopener noreferrer'
       className='underline underline-offset-4'
-    />
-  )
-}
-
-function CustomImg(props: ComponentProps<'img'>) {
-  const imageSrc = String(props.src ?? '').trim()
-  if (!imageSrc) return null
-  if (imageSrc.includes('img.shields.io')) return null
-  if (imageSrc.startsWith('.'))
-    return (
-      <span className='my-2 flex justify-center bg-zinc-50 p-10 text-sm text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400'>
-        <strong>404</strong>: Oops, image not found!
-      </span>
-    )
-  return (
-    <Image
-      src={imageSrc}
-      width={700}
-      height={400}
-      unoptimized={imageSrc.toLowerCase().endsWith('.gif')}
-      alt={props.alt ?? 'Image'}
-      className='mx-auto rounded-md'
     />
   )
 }
@@ -109,7 +88,7 @@ export default async function Markdown({
     a: (props: ComponentProps<'a'>) => (
       <CustomAnchor {...props} projectName={projectName} />
     ),
-    img: CustomImg,
+    img: ZoomableImage,
     ...(withDevtoEmbeds ? EMBED_COMPONENTS : {}),
   }
 
@@ -124,6 +103,7 @@ export default async function Markdown({
     const file = await unified()
       .use(remarkParse)
       .use(remarkGfm)
+      .use(remarkUnwrapImages)
       .use(remarkPlugins)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)

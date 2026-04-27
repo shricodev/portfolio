@@ -33,11 +33,13 @@ export default async function Page({
   const searchQuery = rawSearchQuery?.trim() || undefined
 
   const perPage = PROJECTS_BATCH_SIZE
-  const { items, hasMore, filteredCount, totalCount } = await fetchProjectsPage({
-    page: 1,
-    perPage,
-    q: searchQuery,
-  })
+  const { items, hasMore, filteredCount, totalCount } = await fetchProjectsPage(
+    {
+      page: 1,
+      perPage,
+      q: searchQuery,
+    },
+  )
 
   const isFiltered = !!searchQuery
   const countLabel = isFiltered
@@ -52,13 +54,13 @@ export default async function Page({
         <AlertTitle className='text-sm font-semibold uppercase'>
           Heads up!
         </AlertTitle>
-        <AlertDescription className='text-sm text-muted-foreground'>
+        <AlertDescription className='text-muted-foreground text-sm'>
           It does not list all of my projects. To view them all, check out my{' '}
           <a
             href='https://github.com/shricodev'
             target='_blank'
             rel='noreferrer noopener'
-            className='font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground hover:transition'
+            className='text-muted-foreground hover:text-foreground font-semibold underline underline-offset-4 hover:transition'
           >
             GitHub
           </a>{' '}
@@ -84,7 +86,7 @@ export default async function Page({
         />
       </Suspense>
 
-      <p className='mb-4 text-sm text-muted-foreground'>{countLabel}</p>
+      <p className='text-muted-foreground mb-4 text-sm'>{countLabel}</p>
 
       <ProjectsInfiniteList
         initialItems={items}
