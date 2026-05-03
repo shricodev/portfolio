@@ -4,8 +4,8 @@ import {
   GitHubIcon,
   TwitterIcon,
   DevToIcon,
-  HashnodeIcon,
   LinkedInIcon,
+  RedditIcon,
   RSSIcon,
 } from '@/components/icons'
 import { BASE_URL } from '@/lib/constants'
@@ -28,14 +28,14 @@ const socials = [
     icon: DevToIcon,
   },
   {
-    name: 'Hashnode',
-    href: 'https://shricodev.hashnode.dev',
-    icon: HashnodeIcon,
-  },
-  {
     name: 'X',
     href: 'https://x.com/shricodev',
     icon: TwitterIcon,
+  },
+  {
+    name: 'Reddit',
+    href: 'https://www.reddit.com/user/shricodev',
+    icon: RedditIcon,
   },
   {
     name: 'RSS',

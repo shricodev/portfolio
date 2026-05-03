@@ -24,6 +24,8 @@ import { notFound } from 'next/navigation'
 import { BackButton } from '@/components/back-button'
 import { Suspense } from 'react'
 import { Button } from '@/components/ui/button'
+import { BlogToc } from '@/components/blog-toc'
+import { extractToc } from '@/lib/blogs/toc'
 
 interface Props {
   params: Promise<{
@@ -112,9 +114,11 @@ export default async function Page(props: Props) {
 
   const { source } = decodeSourceSlug(slug)
   const sourceName = source === 'devto' ? 'DEV' : 'freeCodeCamp'
+  const toc = extractToc(post.content.markdown)
 
   return (
     <section className='pb-10'>
+      <BlogToc headings={toc} />
       <Suspense
         fallback={
           <Button disabled variant='secondary' className='mb-8 flex gap-2'>

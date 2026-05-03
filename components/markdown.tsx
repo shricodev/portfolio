@@ -7,6 +7,8 @@ import remarkRehype from 'remark-rehype'
 import rehypeRaw from 'rehype-raw'
 import rehypePrettyCode from 'rehype-pretty-code'
 import rehypeReact, { type Options as RehypeReactOptions } from 'rehype-react'
+import { visit } from 'unist-util-visit'
+import type { Element, Root } from 'hast'
 import type { ComponentProps, ReactNode } from 'react'
 import { PRETTY_CODE_OPTIONS } from '@/lib/mdx-options'
 import {
@@ -15,6 +17,7 @@ import {
   YouTubeEmbed,
 } from '@/components/mdx/embeds'
 import { ZoomableImage } from '@/components/mdx/zoomable-image'
+import { createSlugger } from '@/lib/slugify'
 
 interface MarkdownProps {
   source: string
@@ -77,6 +80,30 @@ function normalizeBlogMarkdown(raw: string): string {
   return raw.replace(IMAGE_ALIGN_RE, '$1$2')
 }
 
+const HEADING_TAGS = new Set(['h2', 'h3', 'h4'])
+
+function hastNodeText(node: Element | { type: string; value?: string; children?: unknown[] }): string {
+  if ('value' in node && typeof node.value === 'string') return node.value
+  if ('children' in node && Array.isArray(node.children)) {
+    return node.children
+      .map(child => hastNodeText(child as Element))
+      .join('')
+  }
+  return ''
+}
+
+function rehypeHeadingIds() {
+  return (tree: Root) => {
+    const slug = createSlugger()
+    visit(tree, 'element', (node: Element) => {
+      if (!HEADING_TAGS.has(node.tagName)) return
+      const text = hastNodeText(node).trim()
+      if (!text) return
+      node.properties = { ...(node.properties ?? {}), id: slug(text) }
+    })
+  }
+}
+
 export default async function Markdown({
   source,
   projectName,
@@ -107,6 +134,7 @@ export default async function Markdown({
       .use(remarkPlugins)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
+      .use(rehypeHeadingIds)
       .use(rehypePrettyCode, PRETTY_CODE_OPTIONS)
       .use(rehypeReact, rehypeReactOptions)
       .process(normalized)

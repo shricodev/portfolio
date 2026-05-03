@@ -131,6 +131,18 @@
   --tw-prose-invert-pre-code: hsl(var(--foreground));
 }
 
+.prose :is(h2, h3, h4)[id] {
+  scroll-margin-top: 8rem;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 .prose pre {
   @apply overflow-x-auto rounded-lg border border-border px-5 py-4 text-sm;
 }
