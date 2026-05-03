@@ -31,17 +31,21 @@ export function SourceFilter({ current }: { current: BlogSourceFilter }) {
 
   return (
     <div className='mb-4 flex gap-2'>
-      {BLOG_SOURCE_OPTIONS.map(option => (
-        <Button
-          key={option}
-          variant={current === option ? 'default' : 'outline'}
-          size='sm'
-          onClick={() => handleClick(option)}
-          className='text-xs'
-        >
-          {LABELS[option]}
-        </Button>
-      ))}
+      {BLOG_SOURCE_OPTIONS.map(option => {
+        const active = current === option
+        return (
+          <Button
+            key={option}
+            variant={active ? 'secondary' : 'ghost'}
+            size='sm'
+            onClick={() => handleClick(option)}
+            aria-pressed={active}
+            className='text-xs'
+          >
+            {LABELS[option]}
+          </Button>
+        )
+      })}
     </div>
   )
 }

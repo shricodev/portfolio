@@ -10,8 +10,6 @@ import {
 } from '@/components/icons'
 import { formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import Markdown from '@/components/markdown'
-import { remarkDevtoEmbeds } from '@/lib/blogs/remark-devto-embeds'
 import { UserAvatar } from '@/components/user-avatar'
 import {
   getAllBlogPostSlugs,
@@ -25,7 +23,7 @@ import { BackButton } from '@/components/back-button'
 import { Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { BlogToc } from '@/components/blog-toc'
-import { extractToc } from '@/lib/blogs/toc'
+import { renderBlogContent } from '@/lib/blogs/render'
 
 interface Props {
   params: Promise<{
@@ -114,7 +112,7 @@ export default async function Page(props: Props) {
 
   const { source } = decodeSourceSlug(slug)
   const sourceName = source === 'devto' ? 'DEV' : 'freeCodeCamp'
-  const toc = extractToc(post.content.markdown)
+  const { content, toc } = await renderBlogContent(post.content.markdown)
 
   return (
     <section className='pb-10'>
@@ -229,13 +227,7 @@ export default async function Page(props: Props) {
         ) : null}
       </header>
 
-      <main className='prose mt-12 max-w-3xl dark:prose-invert'>
-        <Markdown
-          source={post.content.markdown}
-          remarkPlugins={[remarkDevtoEmbeds]}
-          withDevtoEmbeds
-        />
-      </main>
+      <main className='prose mt-12 max-w-3xl dark:prose-invert'>{content}</main>
 
       <div className='mt-10 flex items-center gap-4 text-sm font-medium text-muted-foreground'>
         <div className='flex items-center gap-1 hover:text-foreground hover:transition'>

@@ -45,7 +45,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
     if (!project) throw new Error(`Project not found: ${projectName}`)
 
-    const { title, description } = project.metadata
+    const { title, description, clone_url } = project.metadata
+    const repoUrl = clone_url.replace(/\.git$/, '')
 
     const baseMetadata = {
       title,
@@ -54,6 +55,11 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
     return {
       ...baseMetadata,
+      // Canonical points at the GitHub repo so search engines treat that as the
+      // source of truth for the README content rendered below.
+      alternates: {
+        canonical: repoUrl,
+      },
       openGraph: {
         ...baseMetadata,
         url: new URL(`/projects/${projectName}`, BASE_URL).toString(),

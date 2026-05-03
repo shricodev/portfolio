@@ -10,7 +10,7 @@ import {
   GmailIcon,
 } from '@/components/icons'
 import { InfoTooltip } from '@/components/info-tooltip'
-import type { TocItem } from '@/lib/blogs/toc'
+import type { TocItem } from '@/lib/blogs/render'
 
 const CONNECT_LINKS = [
   {
@@ -112,7 +112,7 @@ export function BlogToc({ headings }: { headings: TocItem[] }) {
               <a
                 href={`#${h.id}`}
                 onClick={handleClick(h.id)}
-                aria-current={activeId === h.id ? 'location' : undefined}
+                aria-current={activeId === h.id ? 'true' : undefined}
                 className={cn(
                   'block py-0.5 text-sm leading-snug hover:text-foreground',
                   activeId === h.id
