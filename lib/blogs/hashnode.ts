@@ -9,6 +9,7 @@ import type {
   TBlogCardMetadata,
   TBlogPostDetail,
 } from '@/types/blogs'
+import { probeCoverDimensions } from '@/lib/blogs/probe-cover'
 
 // FCC publication ID and shricodev author ID on Hashnode
 const HASHNODE_FCC_PUBLICATION_ID = '65dc2b7cbb4eb0cd565b4463'
@@ -87,7 +88,11 @@ async function executeGraphQLRequest<T>(
   }
 }
 
-function normalizeHashnodePost(post: THashnodePost): TBlogCardMetadata {
+async function normalizeHashnodePost(
+  post: THashnodePost,
+): Promise<TBlogCardMetadata> {
+  const coverImage = post.coverImage?.url
+  const dims = await probeCoverDimensions(coverImage)
   return {
     id: post.id,
     title: post.title,
@@ -100,17 +105,21 @@ function normalizeHashnodePost(post: THashnodePost): TBlogCardMetadata {
     author: post.author,
     source: 'hashnode',
     sourceUrl: `https://${HASHNODE_FCC_HOST}/${post.slug}`,
-    coverImage: post.coverImage?.url,
+    coverImage,
+    coverImageWidth: dims?.width,
+    coverImageHeight: dims?.height,
     commentsCount: 0,
     reactionsCount: 0,
+    seo: post.seo,
   }
 }
 
-function normalizeHashnodePostDetail(post: THashnodePost): TBlogPostDetail {
+async function normalizeHashnodePostDetail(
+  post: THashnodePost,
+): Promise<TBlogPostDetail> {
   return {
-    ...normalizeHashnodePost(post),
+    ...(await normalizeHashnodePost(post)),
     subtitle: post.subtitle,
-    seo: post.seo,
     content: { markdown: post.content.markdown },
   }
 }
@@ -157,10 +166,10 @@ export async function getAllHashnodeFCCPosts(): Promise<TBlogCardMetadata[]> {
 
   const json = (await res.json()) as { data?: TSearchPostsResponse }
   const edges = json.data?.searchPostsOfPublication?.edges ?? []
-  return edges
+  const nodes = edges
     .map(edge => edge?.node)
     .filter((node): node is THashnodePost => !!node)
-    .map(normalizeHashnodePost)
+  return Promise.all(nodes.map(normalizeHashnodePost))
 }
 
 export async function getHashnodeFCCPostBySlug(
@@ -177,7 +186,7 @@ export async function getHashnodeFCCPostBySlug(
     const post = response.publication?.post
     if (!post) return null
 
-    return normalizeHashnodePostDetail(post)
+    return await normalizeHashnodePostDetail(post)
   } catch (error) {
     console.error(`Failed to fetch Hashnode FCC post by slug: ${slug}`, error)
     return null

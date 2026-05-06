@@ -14,6 +14,7 @@ import { UserAvatar } from '@/components/user-avatar'
 import {
   getAllBlogPostSlugs,
   getBlogPostBySlug,
+  getBlogPostCardBySlug,
   decodeSourceSlug,
 } from '@/lib/blogs'
 import type { Metadata } from 'next'
@@ -52,7 +53,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   }
 
   try {
-    const post = await getBlogPostBySlug(slug)
+    const post = await getBlogPostCardBySlug(slug)
     if (!post) throw new Error('Post not found')
 
     const { title, seo, brief, coverImage, sourceUrl } = post
@@ -133,9 +134,10 @@ export default async function Page(props: Props) {
           <Image
             src={post.coverImage}
             alt={post.title}
-            width={750}
-            height={380}
-            className='h-auto rounded-md object-cover'
+            width={post.coverImageWidth ?? 750}
+            height={post.coverImageHeight ?? 380}
+            sizes='(max-width: 768px) 100vw, 750px'
+            className='h-auto w-full rounded-md'
             priority
             unoptimized={post.coverImage.toLowerCase().endsWith('.gif')}
           />

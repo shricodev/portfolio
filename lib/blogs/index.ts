@@ -1,47 +1,12 @@
-import { BLOG_SOURCE_PREFIX_SEPARATOR } from '@/lib/constants'
-import type {
-  BlogSource,
-  TBlogCardMetadata,
-  TBlogPostDetail,
-} from '@/types/blogs'
+import type { TBlogCardMetadata, TBlogPostDetail } from '@/types/blogs'
 import { getAllDevtoPosts, getDevtoPostBySlug } from './devto'
 import {
   getAllHashnodeFCCPosts,
   getHashnodeFCCPostBySlug,
 } from './hashnode'
+import { decodeSourceSlug, encodeSourceSlug } from './slug'
 
-/**
- * Encode source + slug into a URL-safe slug with a source prefix.
- * e.g. "devto--my-post-slug" or "hashnode--my-post-slug"
- */
-export function encodeSourceSlug(source: BlogSource, slug: string): string {
-  return `${source}${BLOG_SOURCE_PREFIX_SEPARATOR}${slug}`
-}
-
-/**
- * Decode a prefixed slug back to { source, slug }.
- * Falls back to 'devto' if no prefix found.
- */
-export function decodeSourceSlug(prefixedSlug: string): {
-  source: BlogSource
-  slug: string
-} {
-  const sepIndex = prefixedSlug.indexOf(BLOG_SOURCE_PREFIX_SEPARATOR)
-  if (sepIndex === -1) {
-    return { source: 'devto', slug: prefixedSlug }
-  }
-
-  const source = prefixedSlug.substring(0, sepIndex) as BlogSource
-  const slug = prefixedSlug.substring(
-    sepIndex + BLOG_SOURCE_PREFIX_SEPARATOR.length,
-  )
-
-  if (source !== 'devto' && source !== 'hashnode') {
-    return { source: 'devto', slug: prefixedSlug }
-  }
-
-  return { source, slug }
-}
+export { decodeSourceSlug, encodeSourceSlug }
 
 function sortByPublishedAtDesc(a: TBlogCardMetadata, b: TBlogCardMetadata) {
   return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
@@ -127,4 +92,17 @@ export async function getBlogPostBySlug(
   }
 
   return getHashnodeFCCPostBySlug(slug)
+}
+
+/**
+ * Resolve a single post's card metadata from the cached merged list.
+ * Used by `generateMetadata` so we don't make a per-slug API call for
+ * every static page during build (which was causing 429s on Dev.to).
+ */
+export async function getBlogPostCardBySlug(
+  prefixedSlug: string,
+): Promise<TBlogCardMetadata | null> {
+  const { source, slug } = decodeSourceSlug(prefixedSlug)
+  const all = await getAllBlogPosts()
+  return all.find(p => p.source === source && p.slug === slug) ?? null
 }

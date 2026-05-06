@@ -9,31 +9,50 @@ import type {
   TBlogCardMetadata,
   TBlogPostDetail,
 } from '@/types/blogs'
+import { probeCoverDimensions } from '@/lib/blogs/probe-cover'
+import { createLimiter } from '@/lib/blogs/limit'
 
-async function fetchDevto<T>(path: string, retries = 3): Promise<T> {
-  for (let attempt = 0; attempt < retries; attempt++) {
-    const res = await fetch(`${DEVTO_API_BASE}${path}`, {
-      next: { revalidate: 3600 },
-    })
+// Dev.to rate-limits unauthenticated traffic per IP. Cap concurrent
+// in-flight calls per worker process so static generation does not
+// burst past the limit and trigger 429s.
+const devtoLimit = createLimiter(2)
 
-    if (res.status === 429 && attempt < retries - 1) {
-      // Rate limited; wait with exponential backoff before retrying
-      const delay = Math.pow(2, attempt + 1) * 1000
-      await new Promise(resolve => setTimeout(resolve, delay))
-      continue
+async function fetchDevto<T>(path: string, retries = 8): Promise<T> {
+  return devtoLimit(async () => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      const res = await fetch(`${DEVTO_API_BASE}${path}`, {
+        next: { revalidate: 3600 },
+      })
+
+      if (res.status === 429 && attempt < retries - 1) {
+        // Honour the server's Retry-After when present; otherwise back
+        // off exponentially with a 30s cap. Add up to 50% jitter so
+        // sibling workers don't dogpile the same retry window.
+        const retryAfter = res.headers.get('retry-after')
+        const base = retryAfter
+          ? Math.max(1000, Number.parseInt(retryAfter, 10) * 1000)
+          : Math.min(Math.pow(2, attempt) * 1000, 30_000)
+        const delay = base + Math.random() * base * 0.5
+        await new Promise(resolve => setTimeout(resolve, delay))
+        continue
+      }
+
+      if (!res.ok) {
+        throw new Error(`Dev.to API error: ${res.status} ${res.statusText}`)
+      }
+
+      return res.json() as Promise<T>
     }
 
-    if (!res.ok) {
-      throw new Error(`Dev.to API error: ${res.status} ${res.statusText}`)
-    }
-
-    return res.json() as Promise<T>
-  }
-
-  throw new Error('Dev.to API: max retries exceeded')
+    throw new Error('Dev.to API: max retries exceeded')
+  })
 }
 
-function normalizeDevtoArticle(article: TDevtoArticle): TBlogCardMetadata {
+async function normalizeDevtoArticle(
+  article: TDevtoArticle,
+): Promise<TBlogCardMetadata> {
+  const coverImage = article.cover_image ?? undefined
+  const dims = await probeCoverDimensions(coverImage)
   return {
     id: String(article.id),
     title: article.title,
@@ -52,7 +71,9 @@ function normalizeDevtoArticle(article: TDevtoArticle): TBlogCardMetadata {
     author: { name: article.user.name },
     source: 'devto',
     sourceUrl: article.url,
-    coverImage: article.cover_image ?? undefined,
+    coverImage,
+    coverImageWidth: dims?.width,
+    coverImageHeight: dims?.height,
     commentsCount: article.comments_count,
     reactionsCount: article.public_reactions_count,
     organization: article.organization
@@ -72,7 +93,7 @@ export async function getDevtoPosts(
   const articles = await fetchDevto<TDevtoArticle[]>(
     `/articles?username=${DEVTO_USERNAME}&per_page=${perPage}&page=${page}`,
   )
-  return articles.map(normalizeDevtoArticle)
+  return Promise.all(articles.map(normalizeDevtoArticle))
 }
 
 // Cache the full list of Dev.to posts to avoid redundant API calls during build.
@@ -113,7 +134,7 @@ export async function getDevtoPostBySlug(
       `/articles/${articleId}`,
     )
 
-    const card = normalizeDevtoArticle(article)
+    const card = await normalizeDevtoArticle(article)
 
     return {
       ...card,

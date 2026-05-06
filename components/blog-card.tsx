@@ -26,7 +26,7 @@ import {
   SOURCE_QUERY_PARAM,
   type BlogSourceFilter,
 } from '@/lib/constants'
-import { encodeSourceSlug } from '@/lib/blogs'
+import { encodeSourceSlug } from '@/lib/blogs/slug'
 
 interface BlogCardProps {
   blogWithMeta: TBlogCardMetadata
@@ -49,6 +49,8 @@ export const BlogCard = ({ blogWithMeta, searchParams }: BlogCardProps) => {
     readTimeInMinutes,
     publishedAt,
     coverImage,
+    coverImageWidth,
+    coverImageHeight,
     reactionsCount,
     commentsCount,
     organization,
@@ -105,8 +107,8 @@ export const BlogCard = ({ blogWithMeta, searchParams }: BlogCardProps) => {
                 <Image
                   src={coverImage}
                   alt={title}
-                  width={120}
-                  height={68}
+                  width={coverImageWidth ?? 120}
+                  height={coverImageHeight ?? 68}
                   sizes='120px'
                   className='h-auto w-[120px] rounded-md'
                   unoptimized={coverImage.toLowerCase().endsWith('.gif')}
