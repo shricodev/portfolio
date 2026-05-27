@@ -1,0 +1,143 @@
+---
+title: "gcase"
+description: "change 'case' of files and directories recursively. small utility to fix my recurring pain. WIP ✅"
+clone_url: "https://github.com/shricodev/gcase.git"
+language: "Go"
+homepage: ""
+topics:
+  - "cli"
+  - "cobra"
+  - "golang"
+  - "showcase"
+created_at: "2026-05-23T07:26:28Z"
+updated_at: "2026-05-26T17:39:25Z"
+---
+
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/MariaLetta/free-gophers-pack/master/characters/png/73.png" width="250" alt="Gopher" />
+
+# gcase
+
+**Rename files and folders by case upper, lower, or capitalize**
+
+[![Go Version](https://img.shields.io/badge/Go-1.26.2-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey?style=flat)]()
+[![CLI](https://img.shields.io/badge/CLI-Cobra-informational?style=flat)](https://github.com/spf13/cobra)
+
+</div>
+
+---
+
+_Small utility to fix my recurring pain of capital and uppercase folders. Nothing fancy._
+
+`gcase` is a CLI tool for bulk-renaming files and directories by changing their case. Point it at a path, pick a mode, and it renames everything with full control over recursion, hidden files, extension preservation, and dry-run previews before touching anything.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Commands](#commands)
+- [Flags](#flags)
+- [Examples](#examples)
+- [License](#license)
+
+---
+
+## Features
+
+- Rename files, directories, or both in one shot
+- Recursive mode for entire directory trees
+- Dry-run preview to see every change before it happens
+- Preserve file extensions during rename (e.g. `FILE.TXT` → `file.TXT`)
+- Hidden file support (`.dotfiles` and `.dotdirs`)
+- Deepest paths renamed first safe order guaranteed, no stale parent paths
+- Works on Linux, macOS, and Windows
+
+---
+
+## Installation
+
+```bash
+go install github.com/shricodev/gcase@latest
+```
+
+---
+
+## Usage
+
+```
+gcase <command> <path> [flags]
+```
+
+---
+
+## Commands
+
+| Command      | Description                                   |
+| ------------ | --------------------------------------------- |
+| `lower`      | Rename items to lowercase                     |
+| `upper`      | Rename items to uppercase                     |
+| `capitalize` | Capitalize the first letter of each item name |
+
+---
+
+## Flags
+
+| Flag                   | Short | Default | Description                                          |
+| ---------------------- | ----- | ------- | ---------------------------------------------------- |
+| `--dry-run`            | `-n`  | `false` | Show what would be renamed without changing anything |
+| `--recursive`          | `-r`  | `false` | Rename recursively                                   |
+| `--target`             |       | `dirs`  | What to rename: `dirs`, `files`, or `all`            |
+| `--preserve-extension` |       | `true`  | Preserve file extensions when renaming               |
+| `--include-hidden`     |       | `false` | Include hidden files and directories                 |
+
+---
+
+## Examples
+
+Preview lowercasing all files recursively, without changing anything:
+
+```bash
+gcase lower ./myproject --target files --recursive --dry-run
+```
+
+Uppercase all directory names in the current folder:
+
+```bash
+gcase upper . --target dirs
+```
+
+Capitalize everything recursively, including hidden files:
+
+```bash
+gcase capitalize ./myproject --target all --recursive --include-hidden
+```
+
+Lowercase file names but keep their extensions untouched:
+
+```bash
+gcase lower ./myproject --target files --preserve-extension
+```
+
+Rename a single file:
+
+```bash
+gcase upper ./docs/README.md
+```
+
+Full recursive rename of files and dirs, live (no dry-run):
+
+```bash
+gcase lower ./myproject --target all --recursive --include-hidden --preserve-extension=false
+```
+
+---
+
+## License
+
+Licensed under the [Apache 2.0 License](LICENSE).
