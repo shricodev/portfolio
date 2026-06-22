@@ -1,4 +1,4 @@
-import { EmbeddedTweet } from 'react-tweet'
+import { EmbeddedTweet, enrichTweet } from 'react-tweet'
 import { getTweet } from 'react-tweet/api'
 import { ArrowUpRightIcon } from '@/components/icons'
 
@@ -38,6 +38,21 @@ export async function TweetEmbed({ id }: { id: string }) {
   }
 
   if (!tweet) {
+    return (
+      <FallbackLink
+        kind='tweet'
+        target={`https://x.com/i/status/${tweetId}`}
+      />
+    )
+  }
+
+  // EmbeddedTweet is a server component that enriches the tweet while it
+  // renders, and image-only tweets sometimes come back missing entity arrays
+  // which makes that throw uncatchably. Run the same enrich here where we can
+  // catch it and fall back to a link.
+  try {
+    enrichTweet(tweet)
+  } catch {
     return (
       <FallbackLink
         kind='tweet'

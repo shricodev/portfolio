@@ -38,6 +38,11 @@ export const DEVTO_BLOGS_PER_PAGE = 30
 
 export const HASHNODE_FCC_HOST = 'freecodecamp.org/news'
 
+// freeCodeCamp author RSS feed. Hashnode's GraphQL API went Pro-only :(((
+// so now, need to deal with the content from the RSS feed.
+export const FREECODECAMP_RSS_URL =
+  'https://www.freecodecamp.org/news/author/shricodev/rss/'
+
 export const BLOG_SOURCE_PREFIX_SEPARATOR = '--'
 
 export const PROJECT_FILTER_TOPIC = 'showcase'

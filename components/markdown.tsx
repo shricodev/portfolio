@@ -14,6 +14,7 @@ import {
   TweetEmbed,
   YouTubeEmbed,
 } from '@/components/mdx/embeds'
+import { EmbedBoundary } from '@/components/mdx/embed-boundary'
 import { ZoomableImage } from '@/components/mdx/zoomable-image'
 
 interface MarkdownProps {
@@ -54,18 +55,39 @@ function readDataAttr(props: Record<string, unknown>, key: string): string {
 }
 
 const EMBED_COMPONENTS = {
-  'embed-youtube': (props: Record<string, unknown>) => (
-    <YouTubeEmbed id={readDataAttr(props, 'data-arg')} />
-  ),
-  'embed-tweet': (props: Record<string, unknown>) => (
-    <TweetEmbed id={readDataAttr(props, 'data-arg')} />
-  ),
-  'embed-fallback': (props: Record<string, unknown>) => (
-    <FallbackLink
-      kind={readDataAttr(props, 'data-kind')}
-      target={readDataAttr(props, 'data-target')}
-    />
-  ),
+  'embed-youtube': (props: Record<string, unknown>) => {
+    const id = readDataAttr(props, 'data-arg')
+    return (
+      <EmbedBoundary fallback={<FallbackLink kind='link' target={id} />}>
+        <YouTubeEmbed id={id} />
+      </EmbedBoundary>
+    )
+  },
+  'embed-tweet': (props: Record<string, unknown>) => {
+    const id = readDataAttr(props, 'data-arg')
+    const tweetId = id.replace(/[^\d]/g, '')
+    return (
+      <EmbedBoundary
+        fallback={
+          <FallbackLink
+            kind='tweet'
+            target={tweetId ? `https://x.com/i/status/${tweetId}` : id}
+          />
+        }
+      >
+        <TweetEmbed id={id} />
+      </EmbedBoundary>
+    )
+  },
+  'embed-fallback': (props: Record<string, unknown>) => {
+    const kind = readDataAttr(props, 'data-kind')
+    const target = readDataAttr(props, 'data-target')
+    return (
+      <EmbedBoundary fallback={<FallbackLink kind={kind} target={target} />}>
+        <FallbackLink kind={kind} target={target} />
+      </EmbedBoundary>
+    )
+  },
 }
 
 // Dev.to and Hashnode both emit `![alt](url align="center")` which violates

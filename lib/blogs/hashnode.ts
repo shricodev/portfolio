@@ -1,195 +1,153 @@
-import request, { gql } from 'graphql-request'
-import { env } from '@/lib/env'
-import {
-  HASHNODE_FCC_HOST,
-} from '@/lib/constants'
-import type {
-  THashnodePublicationPostBySlugResponse,
-  THashnodePost,
-  TBlogCardMetadata,
-  TBlogPostDetail,
-} from '@/types/blogs'
+import { XMLParser } from 'fast-xml-parser'
+import { NodeHtmlMarkdown } from 'node-html-markdown'
+import { FREECODECAMP_RSS_URL } from '@/lib/constants'
+import type { TBlogCardMetadata, TBlogPostDetail } from '@/types/blogs'
 import { probeCoverDimensions } from '@/lib/blogs/probe-cover'
 
-// FCC publication ID and shricodev author ID on Hashnode
-const HASHNODE_FCC_PUBLICATION_ID = '65dc2b7cbb4eb0cd565b4463'
-const HASHNODE_AUTHOR_ID = '641fd8b0be4ca15b2ad2a590'
+// freeCodeCamp posts used to come from Hashnode's GraphQL API, but that went
+// Pro-only, so we read them from the FCC author RSS feed instead. The source
+// key stays 'hashnode' so existing /blogs/hashnode--* URLs keep working.
 
-type TSearchPostsResponse = {
-  searchPostsOfPublication?: {
-    edges?: {
-      node?: THashnodePost
-    }[]
+type TRssItem = {
+  title?: string
+  description?: string
+  link?: string
+  guid?: string | { '#text'?: string }
+  category?: string | string[]
+  'dc:creator'?: string
+  pubDate?: string
+  'media:content'?: { '@_url'?: string } | { '@_url'?: string }[]
+  'content:encoded'?: string
+}
+
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: '@_',
+  trimValues: true,
+})
+
+function toArray<T>(value: T | T[] | undefined): T[] {
+  if (value == null) return []
+  return Array.isArray(value) ? value : [value]
+}
+
+function text(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+// FCC URLs look like https://www.freecodecamp.org/news/<slug>/ — use the last
+// path segment as the slug.
+function slugFromLink(link: string): string {
+  return (
+    link
+      .replace(/\/+$/, '')
+      .split('/')
+      .pop() ?? ''
+  )
+}
+
+function estimateReadTime(content: string): number {
+  const words = content.trim().split(/\s+/).filter(Boolean).length
+  return Math.max(1, Math.round(words / 200))
+}
+
+async function fetchRssItems(): Promise<TRssItem[]> {
+  const res = await fetch(FREECODECAMP_RSS_URL, {
+    next: { revalidate: 3600 },
+  })
+  if (!res.ok) {
+    console.error('Failed to fetch freeCodeCamp RSS feed:', res.status)
+    return []
   }
-}
-
-const QUERIES = {
-  GET_PUBLICATION_POST_BY_SLUG: gql`
-    query getPublicationPostBySlug($host: String!, $slug: String!) {
-      publication(host: $host) {
-        post(slug: $slug) {
-          id
-          title
-          subtitle
-          brief
-          readTimeInMinutes
-          publishedAt
-          updatedAt
-          slug
-          tags {
-            name
-          }
-          coverImage {
-            url
-          }
-          content {
-            markdown
-          }
-          seo {
-            description
-          }
-          author {
-            name
-          }
-        }
-      }
-    }
-  `,
-}
-
-class BlogAPIError extends Error {
-  constructor(
-    message: string,
-    public readonly originalError?: unknown,
-  ) {
-    super(
-      originalError instanceof Error
-        ? `${message}: ${originalError.message}`
-        : message,
-    )
-    this.name = 'BlogAPIError'
+  const xml = await res.text()
+  const parsed = parser.parse(xml) as {
+    rss?: { channel?: { item?: TRssItem | TRssItem[] } }
   }
+  return toArray(parsed.rss?.channel?.item)
 }
 
-async function executeGraphQLRequest<T>(
-  query: string,
-  variables: Record<string, unknown>,
-  errorMessage: string,
-): Promise<T> {
-  try {
-    return await request<T>(
-      env.NEXT_PUBLIC_HASHNODE_GQL_ENDPOINT,
-      query,
-      variables,
-    )
-  } catch (error) {
-    console.error(`${errorMessage}:`, error)
-    throw new BlogAPIError(errorMessage, error)
-  }
-}
+function itemToCardMetadata(item: TRssItem): TBlogCardMetadata | null {
+  const link = text(item.link)
+  if (!link) return null
 
-async function normalizeHashnodePost(
-  post: THashnodePost,
-): Promise<TBlogCardMetadata> {
-  const coverImage = post.coverImage?.url
-  const dims = await probeCoverDimensions(coverImage)
+  const slug = slugFromLink(link)
+  if (!slug) return null
+
+  const guid = typeof item.guid === 'string' ? item.guid : item.guid?.['#text']
+  const coverImage = text(toArray(item['media:content'])[0]?.['@_url']) || undefined
+  const brief = text(item.description) || undefined
+  const tags = toArray(item.category)
+    .map(c => text(c).replace(/^#/, '').trim())
+    .filter(Boolean)
+    .map(name => ({ name }))
+
+  // Strip tags for a rough word count; the feed gives full content per item.
+  const plainText = text(item['content:encoded']).replace(/<[^>]+>/g, ' ')
+
+  const published = new Date(text(item.pubDate))
+  const publishedAt = Number.isNaN(published.getTime())
+    ? new Date(0).toISOString()
+    : published.toISOString()
+
   return {
-    id: post.id,
-    title: post.title,
-    readTimeInMinutes: post.readTimeInMinutes,
-    brief: post.brief,
-    publishedAt: post.publishedAt,
-    updatedAt: post.updatedAt,
-    slug: post.slug,
-    tags: post.tags,
-    author: post.author,
+    id: guid || slug,
+    title: text(item.title),
+    readTimeInMinutes: estimateReadTime(plainText),
+    brief,
+    publishedAt,
+    slug,
+    tags,
+    author: { name: text(item['dc:creator']) || 'Shrijal Acharya' },
     source: 'hashnode',
-    sourceUrl: `https://${HASHNODE_FCC_HOST}/${post.slug}`,
+    sourceUrl: link,
     coverImage,
-    coverImageWidth: dims?.width,
-    coverImageHeight: dims?.height,
     commentsCount: 0,
     reactionsCount: 0,
-    seo: post.seo,
-  }
-}
-
-async function normalizeHashnodePostDetail(
-  post: THashnodePost,
-): Promise<TBlogPostDetail> {
-  return {
-    ...(await normalizeHashnodePost(post)),
-    subtitle: post.subtitle,
-    content: { markdown: post.content.markdown },
+    seo: brief ? { description: brief } : undefined,
   }
 }
 
 export async function getAllHashnodeFCCPosts(): Promise<TBlogCardMetadata[]> {
-  // Use raw fetch instead of graphql-request to avoid type serialization issues
-  // with Hashnode's custom scalar types (ObjectId).
-  const query = `query($first: Int!, $filter: SearchPostsOfPublicationFilter!) {
-    searchPostsOfPublication(first: $first, filter: $filter) {
-      edges {
-        node {
-          id title subtitle brief readTimeInMinutes publishedAt updatedAt slug
-          tags { name }
-          coverImage { url }
-          content { markdown }
-          seo { description }
-          author { name }
-        }
+  const items = await fetchRssItems()
+  const cards = items
+    .map(itemToCardMetadata)
+    .filter((c): c is TBlogCardMetadata => c !== null)
+
+  return Promise.all(
+    cards.map(async card => {
+      const dims = await probeCoverDimensions(card.coverImage)
+      return {
+        ...card,
+        coverImageWidth: dims?.width,
+        coverImageHeight: dims?.height,
       }
-    }
-  }`
-
-  const res = await fetch(env.NEXT_PUBLIC_HASHNODE_GQL_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query,
-      variables: {
-        first: 20,
-        filter: {
-          publicationId: HASHNODE_FCC_PUBLICATION_ID,
-          authorIds: [HASHNODE_AUTHOR_ID],
-        },
-      },
     }),
-    next: { revalidate: 3600 },
-  })
-
-  if (!res.ok) {
-    const body = await res.text()
-    console.error('Failed to fetch Hashnode FCC posts:', res.status, body)
-    return []
-  }
-
-  const json = (await res.json()) as { data?: TSearchPostsResponse }
-  const edges = json.data?.searchPostsOfPublication?.edges ?? []
-  const nodes = edges
-    .map(edge => edge?.node)
-    .filter((node): node is THashnodePost => !!node)
-  return Promise.all(nodes.map(normalizeHashnodePost))
+  )
 }
 
 export async function getHashnodeFCCPostBySlug(
   slug: string,
 ): Promise<TBlogPostDetail | null> {
   try {
-    const response =
-      await executeGraphQLRequest<THashnodePublicationPostBySlugResponse>(
-        QUERIES.GET_PUBLICATION_POST_BY_SLUG,
-        { host: HASHNODE_FCC_HOST, slug },
-        'Failed to fetch Hashnode FCC post by slug',
-      )
+    const items = await fetchRssItems()
+    const item = items.find(i => slugFromLink(text(i.link)) === slug)
+    if (!item) return null
 
-    const post = response.publication?.post
-    if (!post) return null
+    const card = itemToCardMetadata(item)
+    if (!card) return null
 
-    return await normalizeHashnodePostDetail(post)
+    const html = text(item['content:encoded'])
+    const markdown = html ? NodeHtmlMarkdown.translate(html) : ''
+    const dims = await probeCoverDimensions(card.coverImage)
+
+    return {
+      ...card,
+      coverImageWidth: dims?.width,
+      coverImageHeight: dims?.height,
+      content: { markdown },
+    }
   } catch (error) {
-    console.error(`Failed to fetch Hashnode FCC post by slug: ${slug}`, error)
+    console.error(`Failed to fetch freeCodeCamp post by slug: ${slug}`, error)
     return null
   }
 }
-
