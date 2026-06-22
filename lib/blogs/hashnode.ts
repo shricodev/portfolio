@@ -5,7 +5,7 @@ import type { TBlogCardMetadata, TBlogPostDetail } from '@/types/blogs'
 import { probeCoverDimensions } from '@/lib/blogs/probe-cover'
 
 // freeCodeCamp posts used to come from Hashnode's GraphQL API, but that went
-// Pro-only, so we read them from the FCC author RSS feed instead. The source
+// Pro-only, so they now come from the FCC author RSS feed instead. The source
 // key stays 'hashnode' so existing /blogs/hashnode--* URLs keep working.
 
 type TRssItem = {
@@ -136,7 +136,13 @@ export async function getHashnodeFCCPostBySlug(
     const card = itemToCardMetadata(item)
     if (!card) return null
 
-    const html = text(item['content:encoded'])
+    // Hashnode marks code blocks with a `lang-*` class, but rehype-pretty-code
+    // expects `language-*`, so normalize the prefix or the language (and its
+    // highlighting) gets dropped.
+    const html = text(item['content:encoded']).replace(
+      /(<code\b[^>]*\bclass=")lang-/gi,
+      '$1language-',
+    )
     const markdown = html ? NodeHtmlMarkdown.translate(html) : ''
     const dims = await probeCoverDimensions(card.coverImage)
 

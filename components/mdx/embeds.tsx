@@ -46,10 +46,9 @@ export async function TweetEmbed({ id }: { id: string }) {
     )
   }
 
-  // EmbeddedTweet is a server component that enriches the tweet while it
-  // renders, and image-only tweets sometimes come back missing entity arrays
-  // which makes that throw uncatchably. Run the same enrich here where we can
-  // catch it and fall back to a link.
+  // EmbeddedTweet enriches the tweet while it renders, and image-only tweets
+  // sometimes come back missing entity arrays, which throws somewhere it can't
+  // be caught. Doing the enrich here catches that and falls back to a link.
   try {
     enrichTweet(tweet)
   } catch {

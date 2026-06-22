@@ -30,13 +30,9 @@ export const DEBOUNCE_TIME_DEFAULT = 250
 export const DEBOUNCE_TIME_PROJECTS = 250
 export const DEBOUNCE_TIME_BLOGS = 300
 
-export const HASHNODE_USERNAME = 'shricodev'
-
 export const DEVTO_USERNAME = 'shricodev'
 export const DEVTO_API_BASE = 'https://dev.to/api'
 export const DEVTO_BLOGS_PER_PAGE = 30
-
-export const HASHNODE_FCC_HOST = 'freecodecamp.org/news'
 
 // freeCodeCamp author RSS feed. Hashnode's GraphQL API went Pro-only :(((
 // so now, need to deal with the content from the RSS feed.

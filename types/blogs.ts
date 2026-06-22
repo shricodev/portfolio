@@ -68,27 +68,3 @@ export type TDevtoArticleDetail = TDevtoArticle & {
   body_html: string
 }
 
-// ----- Hashnode API response types (kept for GraphQL responses) -----
-
-export type THashnodePost = {
-  id: string
-  title: string
-  subtitle?: string
-  brief?: string
-  readTimeInMinutes: number
-  publishedAt: string
-  updatedAt?: string
-  slug: string
-  tags?: { name: string }[]
-  coverImage?: { url?: string }
-  content: { markdown: string }
-  seo?: { description?: string }
-  author: { name: string }
-}
-
-export type THashnodePublicationPostBySlugResponse = {
-  publication?: {
-    post?: THashnodePost
-  }
-}
-

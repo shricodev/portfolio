@@ -16,6 +16,7 @@ import {
 } from '@/components/mdx/embeds'
 import { EmbedBoundary } from '@/components/mdx/embed-boundary'
 import { ZoomableImage } from '@/components/mdx/zoomable-image'
+import { CodeBlock } from '@/components/mdx/code-block'
 
 interface MarkdownProps {
   source: string
@@ -111,6 +112,7 @@ export default async function Markdown({
       <CustomAnchor {...props} projectName={projectName} />
     ),
     img: ZoomableImage,
+    figure: CodeBlock,
     ...(withDevtoEmbeds ? EMBED_COMPONENTS : {}),
   }
 

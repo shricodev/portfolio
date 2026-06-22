@@ -27,8 +27,6 @@
     "clsx": "^2.1.1",
     "fast-xml-parser": "^5.9.3",
     "github-slugger": "^2.0.0",
-    "graphql": "^16.9.0",
-    "graphql-request": "^7.1.2",
     "gray-matter": "^4.0.3",
     "hast-util-to-string": "^3.0.1",
     "image-size": "^2.0.2",

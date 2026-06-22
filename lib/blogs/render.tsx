@@ -19,6 +19,7 @@ import {
 } from '@/components/mdx/embeds'
 import { EmbedBoundary } from '@/components/mdx/embed-boundary'
 import { ZoomableImage } from '@/components/mdx/zoomable-image'
+import { CodeBlock } from '@/components/mdx/code-block'
 import { remarkDevtoEmbeds } from '@/lib/blogs/remark-devto-embeds'
 import { createSlugger } from '@/lib/slugify'
 
@@ -129,6 +130,7 @@ export async function renderBlogContent(source: string): Promise<RenderedBlog> {
     components: {
       a: ExternalAnchor,
       img: ZoomableImage,
+      figure: CodeBlock,
       ...EMBED_COMPONENTS,
     },
   }

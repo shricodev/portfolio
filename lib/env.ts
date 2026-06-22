@@ -19,7 +19,6 @@ export const env = createEnv({
    * 💡 You'll get type errors if these are not prefixed with NEXT_PUBLIC_.
    */
   client: {
-    NEXT_PUBLIC_HASHNODE_GQL_ENDPOINT: z.string().url(),
     NEXT_PUBLIC_MODE: z.string().min(1, { message: 'Required' }),
   },
   /*
@@ -31,8 +30,6 @@ export const env = createEnv({
   runtimeEnv: {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
-    NEXT_PUBLIC_HASHNODE_GQL_ENDPOINT:
-      process.env.NEXT_PUBLIC_HASHNODE_GQL_ENDPOINT,
     NEXT_PUBLIC_MODE: process.env.NEXT_PUBLIC_MODE,
   },
 })
