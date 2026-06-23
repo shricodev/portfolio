@@ -1,0 +1,216 @@
+---
+title: "kron-k8s-agent"
+description: "A durable background agent runtime built on Temporal, Kubernetes, and Composio 💥"
+clone_url: "https://github.com/shricodev/kron-k8s-agent.git"
+language: "TypeScript"
+homepage: ""
+topics:
+  - "ai-agents"
+  - "bash"
+  - "composio"
+  - "docker"
+  - "fastapi"
+  - "kubernetes"
+  - "nextjs"
+  - "python"
+  - "showcase"
+  - "temporal"
+created_at: "2026-06-11T04:45:40Z"
+updated_at: "2026-06-23T16:37:47Z"
+---
+
+# kron-k8s-agent
+
+Run Claude agents as durable background jobs on Kubernetes. Hand the system a goal, walk away, and let it finish on its own time, with retries, scheduling, and tool access wired in.
+
+<p>
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white" />
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-gateway-009688?logo=fastapi&logoColor=white" />
+  <img alt="Temporal" src="https://img.shields.io/badge/Temporal-durable%20execution-000000?logo=temporal&logoColor=white" />
+  <img alt="Kubernetes" src="https://img.shields.io/badge/Kubernetes-KEDA%20%2B%20HPA-326CE5?logo=kubernetes&logoColor=white" />
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white" />
+  <img alt="Anthropic" src="https://img.shields.io/badge/Claude-Opus%204.8-D97757?logo=anthropic&logoColor=white" />
+  <img alt="Composio" src="https://img.shields.io/badge/Composio-tools-6E56CF" />
+</p>
+
+## What this is
+
+A Claude agent that runs as a durable background job instead of a loop in a notebook. You give it a goal, it works through the tools, and the run survives worker restarts, retries on failure, and can be scheduled to fire on its own.
+
+The agent is Claude with [Composio](https://composio.dev) tools, so one goal can touch Gmail, GitHub, Slack, Calendar, and whatever else a user has connected, scoped per user. Temporal handles durability, the gateway handles dispatch and auth, and Kubernetes scales the workers to zero when there is nothing in the queue.
+
+## Architecture
+
+![Architecture](https://cdn.hashnode.com/uploads/covers/641fd8b0be4ca15b2ad2a590/d7fd737e-6c38-4e61-abd1-26246bec2169.png)
+
+There are three moving parts and one rule that keeps them honest.
+
+**Gateway.** A stateless FastAPI service. It issues JWTs, takes dispatch requests, and starts work, holding no agent state of its own. It never imports worker code: workflows are started by string name (`"AgentWorkflow"`), so the gateway and worker build, deploy, and scale independently.
+
+**Temporal.** This is where durability lives. When the gateway dispatches a goal it starts a Temporal workflow, and from that point Temporal owns the execution: it persists every step, retries failed activities with backoff, and resumes the run on a different worker if the one it was on disappears. Status and results are read back through workflow queries.
+
+**Worker.** A Temporal worker that polls the task queue and runs the agent. The agent loop talks to the Anthropic API and to Composio, gets the model's tool calls, executes them, feeds the results back, and repeats until the goal is done or it hits the iteration ceiling.
+
+The rule: **workflows stay pure, side effects live in activities.** The workflow definition does no network calls, no clock reads, no randomness. All of that, the LLM calls, the Composio calls, the notifications, happens inside activities. That separation is what lets Temporal replay a workflow deterministically to rebuild its state after a crash. Break the rule and durability quietly stops working.
+
+### The path a task takes
+
+1. Client gets a token from the gateway, then posts a goal to `/tasks/dispatch`.
+2. If the goal names a toolkit (say `gmail`), the gateway runs a preflight check: is that user's Gmail actually connected? If not, it hands back a Composio Connect link with a `409` instead of dispatching a run that was doomed from the start.
+3. The gateway starts an `AgentWorkflow` on Temporal and returns a `workflow_id` immediately. No blocking.
+4. A worker picks the task off the queue and runs the agent loop inside an activity, with a 30 minute timeout and a retry policy that backs off on transient errors but gives up fast on bad input or a blocked key.
+5. The client polls `/tasks/{id}`, which reads live status off the workflow via query and returns the result once it completes.
+6. On completion a separate, short leashed notify activity fires so a flaky notification never holds up the actual result.
+
+Cancellation sends a signal first so the agent can stop gracefully, then a hard cancel as a backstop.
+
+## Project layout
+
+```
+apps/
+  gateway/        FastAPI: auth, dispatch, status, cancel, preflight toolkit check
+  worker/         Temporal worker + the agent loop
+    agent/        the Claude + Composio loop, kept free of Temporal so it runs standalone
+    workflows.py  AgentWorkflow (pure), retry + timeout policy
+    activities.py  side effects: run the agent, send notifications
+frontend/         Next.js 16 dashboard: dispatch, watch, cancel, connect toolkits
+infra/k8s/        manifests, tiered so you bring up the basics before the autoscalers
+docker/           Dockerfiles + a local Temporal stack (server, postgres, web UI)
+scripts/          build, load, and deploy helpers
+```
+
+The agent package under `apps/worker/agent` has no Temporal dependency on purpose. You can run the loop directly with `run_agent_local.py` while iterating on prompts or tools, then let the worker wrap it for the durable path. Same code, two entry points.
+
+## Running on Kubernetes
+
+This runs entirely in cluster. Temporal, the gateway, and the workers all live in Kubernetes. There is no separate local mode to babysit; you build two images, push them into the cluster, and apply the manifests.
+
+You need a cluster (`k3d` or `kind` both work), `kubectl` pointed at it, an Anthropic API key, and a Composio API key.
+
+The manifests are tiered on purpose. Tier 1 is the application and it is enough to run real tasks. Tier 2 is autoscaling, which you layer on once Tier 1 is healthy.
+
+**1. Build the images.**
+
+```bash
+./scripts/build-images.sh        # agent-gateway:dev and agent-worker:dev
+```
+
+**2. Load them into the cluster.**
+
+A local cluster cannot see your Docker daemon, so the images have to be imported. The script does `k3d` by default, with the `kind` commands inlined as comments.
+
+```bash
+./scripts/load-images.sh         # CLUSTER=agent by default
+```
+
+**3. Install Temporal in cluster.**
+
+This brings up Temporal, its Postgres, and the web UI in a `temporal` namespace, with the frontend reachable at `temporal-frontend.temporal.svc.cluster.local:7233`, which is exactly the address the ConfigMap points the app at.
+
+```bash
+kubectl apply -f infra/k8s/temporal/temporal-dev.yaml
+```
+
+This dev stack uses an `emptyDir` for Postgres, so workflow history resets if that pod dies. Swap in a real volume before you depend on it.
+
+**4. Create the secret.**
+
+The `02-secret.example.yaml` is a reference, not something to apply. Create the real secret with your own keys:
+
+```bash
+kubectl create secret generic agent-secrets -n agent \
+  --from-literal=ANTHROPIC_API_KEY=sk-ant-... \
+  --from-literal=COMPOSIO_API_KEY=ak_... \
+  --from-literal=JWT_SECRET=$(openssl rand -hex 32)
+```
+
+The namespace has to exist first; either apply `00-namespace.yaml` before this or just run it after step 5 and restart the deployments.
+
+**5. Apply Tier 1.**
+
+```bash
+./scripts/deploy.sh        # namespace, config, gateway, worker, scheduled cronjob
+```
+
+**6. Reach the gateway and dispatch a task.**
+
+Port forward the gateway service, then talk to it like any other API.
+
+```bash
+kubectl port-forward -n agent svc/gateway 8000:8000
+
+TOKEN=$(curl -s localhost:8000/auth/token -d '{"user_id":"alice"}' \
+  -H 'content-type: application/json' | jq -r .access_token)
+
+curl -s localhost:8000/tasks/dispatch \
+  -H "authorization: Bearer $TOKEN" \
+  -H 'content-type: application/json' \
+  -d '{"goal":"Summarize my unread GitHub notifications","toolkit":"github"}'
+```
+
+If GitHub is not connected for that user yet, you get a `409` with a Connect link. Open it, authorize, dispatch again. Watch the run land and execute in the Temporal web UI:
+
+```bash
+kubectl port-forward -n temporal svc/temporal-ui 8088:8080
+# http://localhost:8088
+```
+
+**7. Add autoscaling (Tier 2).**
+
+Once Tier 1 is healthy, install KEDA and apply the scalers. The Temporal scaler needs KEDA v2.17 or newer.
+
+```bash
+helm repo add kedacore https://kedacore.github.io/charts
+helm repo update
+helm install keda kedacore/keda -n keda --create-namespace --wait
+
+kubectl apply -f infra/k8s/40-keda-worker-scaledobject.yaml   # scale workers on queue depth
+kubectl apply -f infra/k8s/41-gateway-hpa.yaml                # scale gateway on CPU
+```
+
+The gateway HPA reads CPU from `metrics-server`, which k3d ships by default.
+
+There is also `42-worker-hpa-fallback.yaml`, a CPU based worker autoscaler for clusters without KEDA. Use one or the other, not both.
+
+### Scaling
+
+The gateway is stateless, so it scales on CPU with a plain HPA.
+
+The worker scales on **Temporal task queue depth** through KEDA, not on CPU.
+
+Scheduled work runs as a `CronJob` that dispatches a workflow on a cron, the same "fires with nobody watching" case the preflight check protects.
+
+## Configuration
+
+Everything is environment driven. Defaults are sane for local; the cluster reads the same keys from a ConfigMap and a Secret.
+
+| Variable              | Default                 | What it does                                   |
+| --------------------- | ----------------------- | ---------------------------------------------- |
+| `ANTHROPIC_API_KEY`   | required                | Claude API access                              |
+| `COMPOSIO_API_KEY`    | required                | Composio tool access                           |
+| `MODEL`               | `claude-opus-4-8`       | model the agent loop runs on                   |
+| `MAX_TOKENS`          | `4096`                  | per response token cap                         |
+| `MAX_ITERATIONS`      | `20`                    | hard ceiling on agent loop turns               |
+| `JWT_SECRET`          | dev placeholder         | sign and verify gateway tokens, set a real one |
+| `JWT_EXPIRE_MINUTES`  | `10080`                 | token lifetime                                 |
+| `TEMPORAL_HOST`       | `localhost:7233`        | Temporal frontend address                      |
+| `TEMPORAL_TASK_QUEUE` | `agent-tasks`           | queue the worker polls and KEDA watches        |
+| `GATEWAY_PORT`        | `8000`                  | gateway listen port                            |
+| `CORS_ORIGINS`        | `http://localhost:3000` | allowed frontend origins                       |
+
+## API
+
+| Method   | Route             | Description                                                |
+| -------- | ----------------- | ---------------------------------------------------------- |
+| `POST`   | `/auth/token`     | issue a JWT for a user id                                  |
+| `POST`   | `/tasks/dispatch` | start an agent run, runs the preflight toolkit check first |
+| `GET`    | `/tasks`          | list the caller's tasks                                    |
+| `GET`    | `/tasks/{id}`     | live status and result for one task                        |
+| `DELETE` | `/tasks/{id}`     | request cancellation (signal, then hard cancel)            |
+| `GET`    | `/health`         | liveness                                                   |
+
+Auth here is deliberately a stand in. The `/auth/token` endpoint mints a JWT from a user id with no password or OAuth behind it, so the rest of the system can scope work per user. In a real deployment you swap that one function for actual identity verification and nothing else changes, because every other route already trusts only the verified `sub` claim.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
