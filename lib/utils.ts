@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function isActiveNavPath(pathname: string, linkPath: string): boolean {
+  if (linkPath === '/') return pathname === '/'
+  return pathname === linkPath || pathname.startsWith(`${linkPath}/`)
+}
+
 function timeAgo({ date }: { date: Date }): string {
   const now = new Date()
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)

@@ -15,3 +15,10 @@ export function proxy(request: NextRequest) {
 
   return NextResponse.next()
 }
+
+// Only run on the RSS aliases. Without a matcher the proxy runs on every
+// request, which makes usePathname unreliable on statically prerendered
+// pages (e.g. the navbar's active "Home" link on first load).
+export const config = {
+  matcher: ['/feed', '/feed.xml', '/rss', '/rss2', '/rss2.xml'],
+}

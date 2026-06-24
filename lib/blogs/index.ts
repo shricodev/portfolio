@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import type { TBlogCardMetadata, TBlogPostDetail } from '@/types/blogs'
 import { getAllDevtoPosts, getDevtoPostBySlug } from './devto'
 import {
@@ -14,29 +15,33 @@ function sortByPublishedAtDesc(a: TBlogCardMetadata, b: TBlogCardMetadata) {
 
 /**
  * Fetch all blog posts from both sources, merge, and sort by date.
+ * Wrapped in React `cache` so the page calling both getBlogPostsCardMeta
+ * and getBlogPostsCount in one request only does the work once.
  */
-export async function getAllBlogPosts(): Promise<TBlogCardMetadata[]> {
-  const [devtoPosts, hashnodePosts] = await Promise.allSettled([
-    getAllDevtoPosts(),
-    getAllHashnodeFCCPosts(),
-  ])
+export const getAllBlogPosts = cache(
+  async (): Promise<TBlogCardMetadata[]> => {
+    const [devtoPosts, hashnodePosts] = await Promise.allSettled([
+      getAllDevtoPosts(),
+      getAllHashnodeFCCPosts(),
+    ])
 
-  const merged: TBlogCardMetadata[] = []
+    const merged: TBlogCardMetadata[] = []
 
-  if (devtoPosts.status === 'fulfilled') {
-    merged.push(...devtoPosts.value)
-  } else {
-    console.error('Failed to fetch Dev.to posts:', devtoPosts.reason)
-  }
+    if (devtoPosts.status === 'fulfilled') {
+      merged.push(...devtoPosts.value)
+    } else {
+      console.error('Failed to fetch Dev.to posts:', devtoPosts.reason)
+    }
 
-  if (hashnodePosts.status === 'fulfilled') {
-    merged.push(...hashnodePosts.value)
-  } else {
-    console.error('Failed to fetch Hashnode FCC posts:', hashnodePosts.reason)
-  }
+    if (hashnodePosts.status === 'fulfilled') {
+      merged.push(...hashnodePosts.value)
+    } else {
+      console.error('Failed to fetch Hashnode FCC posts:', hashnodePosts.reason)
+    }
 
-  return merged.sort(sortByPublishedAtDesc)
-}
+    return merged.sort(sortByPublishedAtDesc)
+  },
+)
 
 /**
  * Get a paginated slice of all blog posts (merged from both sources).

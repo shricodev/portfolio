@@ -5,6 +5,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { usePathname } from 'next/navigation'
 import { NavDropdown } from '@/components/nav-dropdown'
 import { NAV_LINKS } from '@/lib/constants'
+import { isActiveNavPath } from '@/lib/utils'
 import { Poppins } from 'next/font/google'
 
 const poppins = Poppins({
@@ -18,7 +19,7 @@ export const Navbar = () => {
   const pathName = usePathname()
 
   const getClassnameForLink = (path: string) =>
-    pathName === path
+    isActiveNavPath(pathName, path)
       ? 'underline underline-offset-4 text-foreground capitalize'
       : 'text-muted-foreground capitalize hover:text-zinc-600 dark:hover:text-zinc-500'
 
