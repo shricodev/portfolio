@@ -13,8 +13,6 @@ export type TBlogCardMetadata = {
   source: BlogSource
   sourceUrl: string
   coverImage?: string
-  coverImageWidth?: number
-  coverImageHeight?: number
   commentsCount: number
   reactionsCount: number
   organization?: {

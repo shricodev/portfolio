@@ -9,7 +9,6 @@ import type {
   TBlogCardMetadata,
   TBlogPostDetail,
 } from '@/types/blogs'
-import { probeCoverDimensions } from '@/lib/blogs/probe-cover'
 import { createLimiter } from '@/lib/blogs/limit'
 
 // Dev.to rate-limits unauthenticated traffic per IP. Cap concurrent
@@ -48,11 +47,8 @@ async function fetchDevto<T>(path: string, retries = 8): Promise<T> {
   })
 }
 
-async function normalizeDevtoArticle(
-  article: TDevtoArticle,
-): Promise<TBlogCardMetadata> {
+function normalizeDevtoArticle(article: TDevtoArticle): TBlogCardMetadata {
   const coverImage = article.cover_image ?? undefined
-  const dims = await probeCoverDimensions(coverImage)
   return {
     id: String(article.id),
     title: article.title,
@@ -72,8 +68,6 @@ async function normalizeDevtoArticle(
     source: 'devto',
     sourceUrl: article.url,
     coverImage,
-    coverImageWidth: dims?.width,
-    coverImageHeight: dims?.height,
     commentsCount: article.comments_count,
     reactionsCount: article.public_reactions_count,
     organization: article.organization
@@ -93,7 +87,7 @@ export async function getDevtoPosts(
   const articles = await fetchDevto<TDevtoArticle[]>(
     `/articles?username=${DEVTO_USERNAME}&per_page=${perPage}&page=${page}`,
   )
-  return Promise.all(articles.map(normalizeDevtoArticle))
+  return articles.map(normalizeDevtoArticle)
 }
 
 // Cache the full list of Dev.to posts to avoid redundant API calls during build.
@@ -134,7 +128,7 @@ export async function getDevtoPostBySlug(
       `/articles/${articleId}`,
     )
 
-    const card = await normalizeDevtoArticle(article)
+    const card = normalizeDevtoArticle(article)
 
     return {
       ...card,

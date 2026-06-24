@@ -130,14 +130,13 @@ export default async function Page(props: Props) {
       </Suspense>
 
       {post.coverImage ? (
-        <div className='relative mb-6 w-full'>
+        <div className='relative mb-6 aspect-[1000/420] w-full overflow-hidden rounded-md'>
           <Image
             src={post.coverImage}
             alt={post.title}
-            width={post.coverImageWidth ?? 750}
-            height={post.coverImageHeight ?? 380}
+            fill
             sizes='(max-width: 768px) 100vw, 750px'
-            className='h-auto w-full rounded-md'
+            className='object-cover'
             priority
             unoptimized={post.coverImage.toLowerCase().endsWith('.gif')}
           />

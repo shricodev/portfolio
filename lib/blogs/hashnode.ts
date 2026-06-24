@@ -2,7 +2,6 @@ import { XMLParser } from 'fast-xml-parser'
 import { NodeHtmlMarkdown } from 'node-html-markdown'
 import { FREECODECAMP_RSS_URL } from '@/lib/constants'
 import type { TBlogCardMetadata, TBlogPostDetail } from '@/types/blogs'
-import { probeCoverDimensions } from '@/lib/blogs/probe-cover'
 
 // freeCodeCamp posts used to come from Hashnode's GraphQL API, but that went
 // Pro-only, so they now come from the FCC author RSS feed instead. The source
@@ -109,20 +108,9 @@ function itemToCardMetadata(item: TRssItem): TBlogCardMetadata | null {
 
 export async function getAllHashnodeFCCPosts(): Promise<TBlogCardMetadata[]> {
   const items = await fetchRssItems()
-  const cards = items
+  return items
     .map(itemToCardMetadata)
     .filter((c): c is TBlogCardMetadata => c !== null)
-
-  return Promise.all(
-    cards.map(async card => {
-      const dims = await probeCoverDimensions(card.coverImage)
-      return {
-        ...card,
-        coverImageWidth: dims?.width,
-        coverImageHeight: dims?.height,
-      }
-    }),
-  )
 }
 
 export async function getHashnodeFCCPostBySlug(
@@ -144,12 +132,9 @@ export async function getHashnodeFCCPostBySlug(
       '$1language-',
     )
     const markdown = html ? NodeHtmlMarkdown.translate(html) : ''
-    const dims = await probeCoverDimensions(card.coverImage)
 
     return {
       ...card,
-      coverImageWidth: dims?.width,
-      coverImageHeight: dims?.height,
       content: { markdown },
     }
   } catch (error) {

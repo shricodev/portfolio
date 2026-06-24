@@ -49,8 +49,6 @@ export const BlogCard = ({ blogWithMeta, searchParams }: BlogCardProps) => {
     readTimeInMinutes,
     publishedAt,
     coverImage,
-    coverImageWidth,
-    coverImageHeight,
     reactionsCount,
     commentsCount,
     organization,
@@ -103,14 +101,13 @@ export const BlogCard = ({ blogWithMeta, searchParams }: BlogCardProps) => {
 
           <div className='flex gap-4'>
             {coverImage && (
-              <div className='hidden flex-shrink-0 sm:block'>
+              <div className='relative hidden h-[68px] w-[120px] flex-shrink-0 overflow-hidden rounded-md sm:block'>
                 <Image
                   src={coverImage}
                   alt={title}
-                  width={coverImageWidth ?? 120}
-                  height={coverImageHeight ?? 68}
+                  fill
                   sizes='120px'
-                  className='h-auto w-[120px] rounded-md'
+                  className='object-cover'
                   unoptimized={coverImage.toLowerCase().endsWith('.gif')}
                 />
               </div>
