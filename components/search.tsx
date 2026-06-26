@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useDebounce } from 'use-debounce'
@@ -29,12 +29,20 @@ export const Search = ({
   const [prevQuery, setPrevQuery] = useState(normalizedQuery)
   const [debouncedQuery] = useDebounce(filterText, debounceTime)
 
-  // Sync input from external navigation (e.g. tag-click on a card) without
-  // clobbering in-progress typing: only overwrite filterText when it doesn't
-  // already match the incoming URL value.
+  // Every value we push to the URL ourselves. Each push round-trips through
+  // the server and comes back as the `query` prop, but in prod that's slow,
+  // so a stale echo can land after the user has typed more. We remember what
+  // we pushed and ignore it on the way back so it can't clobber newer input.
+  const pushedValues = useRef<Set<string>>(new Set([normalizedQuery]))
+
+  // Sync input only from genuinely external navigation (tag-click on a card,
+  // back/forward), never from an echo of our own debounced push.
   if (normalizedQuery !== prevQuery) {
     setPrevQuery(normalizedQuery)
-    if (normalizedQuery !== filterText) {
+    if (
+      !pushedValues.current.has(normalizedQuery) &&
+      normalizedQuery !== filterText
+    ) {
       setFilterText(normalizedQuery)
     }
   }
@@ -43,7 +51,13 @@ export const Search = ({
     // Wait for useDebounce to settle on the latest input before pushing,
     // which prevents an intermediate stale value from being echoed to the URL.
     if (debouncedQuery !== filterText) return
-    if (debouncedQuery === normalizedQuery) return
+    if (debouncedQuery === normalizedQuery) {
+      // URL has caught up to the input, so older pushes are settled.
+      pushedValues.current = new Set([normalizedQuery])
+      return
+    }
+
+    pushedValues.current.add(debouncedQuery)
 
     const newSearchParams = new URLSearchParams(searchParams)
     if (debouncedQuery) {
@@ -58,6 +72,7 @@ export const Search = ({
   const resetFilter = () => {
     setFilterText('')
     if (!normalizedQuery) return
+    pushedValues.current.add('')
     const newSearchParams = new URLSearchParams(searchParams)
     newSearchParams.delete(SEARCH_QUERY_PARAM)
     const qs = newSearchParams.toString()
