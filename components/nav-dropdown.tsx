@@ -7,14 +7,14 @@ import {
 } from '@/components/ui/popover'
 import { HamburgerMenuIcon } from '@/components/icons'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { NAV_LINKS } from '@/lib/constants'
 import { cn, isActiveNavPath } from '@/lib/utils'
+import { useActivePathname } from '@/hooks/use-active-pathname'
 
 export function NavDropdown() {
   const [isOpen, setIsOpen] = useState<boolean>(false)
-  const pathName = usePathname()
+  const pathName = useActivePathname()
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>

@@ -16,9 +16,9 @@ export function proxy(request: NextRequest) {
   return NextResponse.next()
 }
 
-// Only run on the RSS aliases. Without a matcher the proxy runs on every
-// request, which makes usePathname unreliable on statically prerendered
-// pages (e.g. the navbar's active "Home" link on first load).
+// Only run on the RSS aliases so the redirect doesn't fire on every request.
+// Note: this file existing at all makes Next defer usePathname() on static
+// pages, which is why the navbar reads it after mount (see useActivePathname).
 export const config = {
   matcher: ['/feed', '/feed.xml', '/rss', '/rss2', '/rss2.xml'],
 }

@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { usePathname } from 'next/navigation'
 import { NavDropdown } from '@/components/nav-dropdown'
 import { NAV_LINKS } from '@/lib/constants'
 import { isActiveNavPath } from '@/lib/utils'
+import { useActivePathname } from '@/hooks/use-active-pathname'
 import { Poppins } from 'next/font/google'
 
 const poppins = Poppins({
@@ -16,7 +16,7 @@ const poppins = Poppins({
 })
 
 export const Navbar = () => {
-  const pathName = usePathname()
+  const pathName = useActivePathname()
 
   const getClassnameForLink = (path: string) =>
     isActiveNavPath(pathName, path)

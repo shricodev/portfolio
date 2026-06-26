@@ -5,7 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function isActiveNavPath(pathname: string, linkPath: string): boolean {
+export function isActiveNavPath(
+  pathname: string | null,
+  linkPath: string,
+): boolean {
+  if (!pathname) return false
   if (linkPath === '/') return pathname === '/'
   return pathname === linkPath || pathname.startsWith(`${linkPath}/`)
 }
