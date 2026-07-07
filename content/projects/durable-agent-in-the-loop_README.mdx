@@ -1,0 +1,231 @@
+---
+title: "durable-agent-in-the-loop"
+description: "Durable AI agents that survive crashes and never duplicate side effects. Built on Temporal + Composio"
+clone_url: "https://github.com/shricodev/durable-agent-in-the-loop.git"
+language: "TypeScript"
+homepage: ""
+topics:
+  - "composio"
+  - "nextjs"
+  - "showcase"
+  - "temporal"
+  - "typescript"
+created_at: "2026-07-06T12:05:09Z"
+updated_at: "2026-07-06T12:35:53Z"
+---
+
+# Durable Agent — Powered by Composio
+
+A durable AI agent control panel. Connect real apps through **Composio**, start a
+durable agent run, watch every step, approve risky actions, and see the final
+result. Each run is a **Temporal workflow** that survives worker crashes,
+restarts, retries, and long pauses — resuming without starting over and
+**without duplicating external side effects**.
+
+> **MVP use case:** _"Read my latest Gmail emails and draft replies for important
+> ones."_ Reading and drafting run automatically; **sending requires approval**;
+> **deleting is blocked**.
+
+---
+
+## What it does
+
+- **Connect tools through Composio.** The connections page fetches the full
+  Composio toolkit catalog dynamically (never a hardcoded shortlist), with
+  search, filtering, connection status, and a server-initiated hosted auth flow.
+- **Start a durable run.** Give the agent a goal and pick which connected
+  toolkits it may use. The run becomes a Temporal workflow.
+- **Watch it work.** The run detail page streams the live timeline: model
+  decisions, Composio tool calls, approval requests, and the final result.
+- **Approve risky actions.** Side-effecting actions pause the workflow until you
+  approve them. Destructive actions are blocked outright.
+- **Never duplicate side effects.** Every tool call is keyed by an idempotency
+  hash, so Temporal retries reuse stored results instead of re-calling Composio.
+
+---
+
+## Architecture
+
+```
+Browser (Next.js UI)
+   │  fetch /api/*            (never talks to Temporal or Composio directly)
+   ▼
+Next.js App Router (server)  ──► Postgres (Drizzle)  ◄── source of truth
+   │  start workflow / send signal              ▲
+   ▼                                            │ activities read/write state
+Temporal Server ──► Temporal Worker ────────────┤
+                      │  Activities only:
+                      ├─► LLM (OpenAI)     decide ONE step at a time
+                      └─► Composio SDK     execute ONE tool (idempotent)
+```
+
+- **Next.js** is the product interface and API. The agent loop never runs inside
+  a request.
+- **Temporal** is the durable workflow engine. One workflow = one run.
+- **Composio** is the tool & integration layer (toolkits, connections, sessions,
+  tool execution), isolated behind `src/lib/composio/`.
+- **Postgres** is the source of truth for runs, steps, tool calls, approvals, and
+  connections. The UI only ever reads Postgres.
+- **OpenAI** decides one step at a time — either one tool call or a final answer.
+
+### Why Temporal
+
+A run can take minutes, pause indefinitely for human approval, and must never
+restart from scratch or re-send an email after a crash. Temporal persists the
+workflow's progress to history and replays it deterministically. The approval
+pause is a durable `condition()` await — the worker can be killed and restarted
+and the run resumes exactly where it left off.
+
+### Why Composio
+
+Composio provides authenticated connections to 1000+ apps and a uniform tool
+execution API. The agent is given only the tools for the toolkits the user
+selected for that run — never the full catalog.
+
+### How idempotency works
+
+Before executing a Composio tool, the worker computes
+`idempotencyKey = sha256(runId | stepId | toolSlug | canonicalJSON(args))` and
+checks `tool_calls` for an existing **succeeded** row with that key. If found, the
+stored result is reused and Composio is **not** called again. The key is a unique
+index, so a Temporal Activity retry (or a worker that crashed after the external
+call) cannot create a duplicate side effect.
+
+> Note: this guarantees "reuse on a recorded success." The narrow window where a
+> worker dies *after* Composio executed but *before* the success is recorded is
+> at-least-once — acceptable for the MVP and called out honestly here.
+
+### How approvals work
+
+The safety policy (`src/lib/policy/risk.ts`) classifies each tool:
+
+| Risk          | Examples                                  | Behavior              |
+| ------------- | ----------------------------------------- | --------------------- |
+| `read`        | fetch/search/list emails                  | runs automatically    |
+| `draft`       | create Gmail draft                        | runs automatically    |
+| `side_effect` | send email, post message, create event    | **requires approval** |
+| `dangerous`   | delete/trash email, change permissions    | **blocked**           |
+
+When approval is required, the workflow creates an `approvals` row, sets the run
+to `waiting_approval`, and **durably pauses**. The UI shows an approval card;
+approving/rejecting calls the API, which **signals** the Temporal workflow. The
+workflow — not the API route — performs the action, so nothing executes before
+approval.
+
+---
+
+## Environment setup
+
+Copy `.env.example` to `.env` and fill in:
+
+| Variable                        | Required | Where to get it                                                                 |
+| ------------------------------- | -------- | ------------------------------------------------------------------------------- |
+| `COMPOSIO_API_KEY`              | yes      | [Composio dashboard](https://app.composio.dev) → Settings → API Keys           |
+| `COMPOSIO_CALLBACK_URL`         | no       | Defaults to `http://localhost:3000/api/connections/callback`                    |
+| `COMPOSIO_GMAIL_AUTH_CONFIG_ID` | no       | Composio dashboard → Auth Configs (optional override; otherwise auto-discovered)|
+| `OPENAI_API_KEY`                | yes      | [OpenAI](https://platform.openai.com/api-keys)                                  |
+| `OPENAI_MODEL`                  | no       | Defaults to `gpt-4o`                                                            |
+| `DATABASE_URL`                  | yes      | Your Postgres connection string                                                 |
+| `TEMPORAL_ADDRESS`              | no       | Defaults to `localhost:7233`                                                    |
+| `TEMPORAL_NAMESPACE`            | no       | Defaults to `default`                                                           |
+| `TEMPORAL_TASK_QUEUE`           | no       | Defaults to `agent-runs`                                                        |
+| `NEXTAUTH_SECRET`               | yes      | `openssl rand -base64 32`                                                       |
+| `NEXTAUTH_URL`                  | no       | Defaults to `http://localhost:3000`                                             |
+| `AGENT_MAX_STEPS`               | no       | Defaults to `12`                                                                |
+
+Temporal Cloud users can additionally set `TEMPORAL_API_KEY` (and point
+`TEMPORAL_ADDRESS` at the cloud endpoint).
+
+### Composio auth configs
+
+Before a user can connect a toolkit (e.g. Gmail), an **auth config** must exist
+in Composio — it defines the OAuth client / scopes / auth method. Create one in
+the Composio dashboard (**Auth Configs** → select the toolkit → choose OAuth2).
+This app resolves the auth config at connect-time by:
+
+1. An env override `COMPOSIO_<TOOLKIT>_AUTH_CONFIG_ID` (e.g.
+   `COMPOSIO_GMAIL_AUTH_CONFIG_ID`), if set; otherwise
+2. Auto-discovering an existing, enabled auth config via the SDK.
+
+If none exists, the connection card clearly shows _"This toolkit requires a
+Composio auth config before users can connect it."_ — it never fails silently.
+
+The Composio integration is isolated in `src/lib/composio/` — `toolkits.ts`,
+`connections.ts`, `tools.ts` wrap the exact SDK calls (`toolkits.get`,
+`authConfigs.list`, `connectedAccounts.link/list`, `tools.getRawComposioTools`,
+`tools.execute`). If an SDK method name changes, that's the only place to adjust.
+
+---
+
+## Run it locally
+
+You need Node 20+, pnpm, Postgres, and the
+[Temporal CLI](https://docs.temporal.io/cli) (for the local dev server).
+
+```bash
+# 1. Install dependencies
+pnpm install
+
+# 2. Configure environment
+cp .env.example .env        # then fill in COMPOSIO_API_KEY, OPENAI_API_KEY, etc.
+
+# 3. Start Postgres (any instance works; here via Docker)
+docker run -d --name durable-agent-pg \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=durable_agent \
+  -p 5432:5432 postgres:16-alpine
+
+# 4. Run migrations
+pnpm db:generate            # only needed if you change the schema
+pnpm db:migrate
+
+# 5. Start Temporal (separate terminal)
+pnpm temporal               # dev server on :7233, web UI on :8233
+
+# 6. Start the Temporal worker (separate terminal)
+pnpm worker
+
+# 7. Start the app (separate terminal)
+pnpm dev                    # http://localhost:3000
+```
+
+Then: **sign up → Connections → connect Gmail → New run → start →** watch the
+live timeline on the run detail page.
+
+### First run checklist
+
+1. Create an account at `/signup`.
+2. Go to **Connections** — toolkits load dynamically from Composio. Connect Gmail
+   (requires a Gmail auth config in your Composio dashboard, see above).
+3. Go to **New run**, enter
+   _"Read my latest Gmail emails and draft replies for important ones."_, select
+   Gmail, and start.
+4. Watch the run detail page: model decisions, Composio tool calls, drafts.
+5. If the agent tries to **send** an email, the run pauses for approval — approve
+   or reject it from the run page or `/approvals`.
+
+---
+
+## Project structure
+
+```
+src/
+  app/
+    (app)/                  authenticated pages (dashboard, connections, runs, approvals, settings)
+    login, signup           auth pages
+    api/                    runs, approvals, toolkits, connections, config, auth
+  components/               app shell, badges, cards, states + ui/ (shadcn primitives)
+  lib/
+    composio/               SDK adapter (client, toolkits, connections, tools, types)
+    db/                     Drizzle schema, client, migrate
+    temporal/               server-side Temporal client
+    policy/risk.ts          tool safety classifier
+    auth/                   NextAuth (credentials) + bcrypt
+    env.ts, ids.ts          env accessors, idempotency keys
+  workflows/                Temporal: agent.workflow, activities, worker, shared
+```
+
+## Tech
+
+Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · shadcn/ui · Temporal ·
+Composio (`@composio/core`) · Postgres + Drizzle · OpenAI · NextAuth · Zod.
+Black/white/grayscale visual system throughout.
