@@ -10,67 +10,113 @@ topics:
   - "showcase"
   - "typescript"
 created_at: "2026-01-12T09:42:30Z"
-updated_at: "2026-01-27T12:19:54Z"
+updated_at: "2026-02-09T15:49:46Z"
 ---
 
-# Composio Agent CLI
+<h1 align="center">
+  <br>
+  agentic-terminal-workbench
+  <br>
+</h1>
 
-A TypeScript CLI for chatting with OpenAI models and optionally running Composio toolkits through the OpenAI Agents SDK. It ships a lightweight ChatGPT-compatible API wrapper, streaming support, and a CLI with interactive mode.
+<h4 align="center">A lightweight CLI for chatting with OpenAI models - with optional <a href="https://composio.dev" target="_blank">Composio</a> toolkits</h4>
 
-<p align="left">
-  <a href="https://www.npmjs.com/package/composio-agent"><img alt="npm" src="https://img.shields.io/npm/v/composio-agent" /></a>
-  <a href="https://github.com/composio/composio-agent/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/composio/composio-agent" /></a>
-  <a href="https://github.com/composio/composio-agent/issues"><img alt="issues" src="https://img.shields.io/github/issues/composio/composio-agent" /></a>
-  <a href="https://github.com/composio/composio-agent/commits/main"><img alt="commit activity" src="https://img.shields.io/github/commit-activity/m/composio/composio-agent" /></a>
+<p align="center">
+  <a href="https://github.com/shricodev/agentic-terminal-workbench/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/shricodev/agentic-terminal-workbench?style=flat-square" alt="license">
+  </a>
+  <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen?style=flat-square&logo=node.js&logoColor=white" alt="node version">
+  <img src="https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript&logoColor=white" alt="typescript">
+  <a href="https://github.com/shricodev/agentic-terminal-workbench/pulls">
+    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs welcome">
+  </a>
 </p>
 
-## Highlights
+## Table of Contents
 
-- CLI for direct chat or interactive sessions.
-- Optional Composio toolkits with a dedicated agent runner.
-- Streaming support for standard OpenAI chat completions.
-- Minimal, typed API wrapper for programmatic use.
-- Sensible defaults with overrides for model, timeouts, and prompts.
+- [Key Features](#key-features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [CLI Reference](#cli-reference)
+- [How Composio Mode Works](#how-composio-mode-works)
+- [Project Structure](#project-structure)
+- [Development](#development)
+- [Credits](#credits)
+- [License](#license)
 
-## Requirements
+```
+$ composio-agent "What came first, the chicken or the egg?"
 
-- Node.js v18+
-- An OpenAI API key
-- Optional: a Composio API key for toolkits
+  ● Thinking...
+
+  The question of what came first -the chicken or the egg -is one of
+  the oldest philosophical puzzles. From a biological standpoint, the egg
+  came first. Genetic mutations that led to the first true chicken would
+  have occurred in the egg laid by a proto-chicken ancestor.
+
+$ composio-agent --toolkits github "List my open PRs"
+
+  ● Fetching from GitHub...
+
+  You have 3 open pull requests:
+  1. feat: add streaming support (#42) -opened 2 days ago
+  2. fix: token counting edge case (#38) -opened 5 days ago
+  3. docs: update CLI reference (#35) -opened 1 week ago
+```
+
+## Key Features
+
+- **Streaming responses** - Real-time token-by-token output via Server-Sent Events
+- **Interactive REPL** - Persistent chat sessions with slash commands and color-coded output
+- **Composio toolkits** - Connect 250+ external APIs (GitHub, Gmail, Slack, and more) through a single `--toolkits` flag
+- **Typed API wrapper** - Minimal, typed interface around OpenAI for programmatic use
+- **Token-aware context** - Automatic context window management powered by [tiktoken](https://github.com/openai/tiktoken)
+- **Model switching** - Swap between GPT-4o, GPT-4 Turbo, GPT-3.5, and more at runtime via `/model`
 
 ## Installation
 
-This repo is set up for local development and direct CLI usage from source.
-
 ```bash
-bun install
+# Clone the repository
+$ git clone https://github.com/shricodev/agentic-terminal-workbench.git
+
+# Navigate to the directory
+$ cd agentic-terminal-workbench
+
+# Install dependencies
+$ bun install
 ```
 
-## Quickstart
+> **Note:** Requires [Node.js](https://nodejs.org/) v18+ and [Bun](https://bun.sh/).
 
-### CLI (from source)
+## Quick Start
 
-Standard OpenAI chat:
-
-```bash
-OPENAI_API_KEY=... bun run cli -- "What came first, the chicken or the egg?"
-```
-
-Interactive mode:
+Set up your environment variables by copying the example file:
 
 ```bash
-OPENAI_API_KEY=... bun run cli
+$ cp .env.example .env
+# Then fill in your API keys in .env
 ```
 
-With Composio toolkits:
+**Standard chat:**
 
 ```bash
-OPENAI_API_KEY=... COMPOSIO_API_KEY=... bun run cli --toolkits github,gmail "List my unread emails"
+$ bun run cli -- "What came first, the chicken or the egg?"
 ```
 
-Note: streaming is not supported when toolkits are enabled (the CLI will warn you).
+**Interactive mode:**
 
-### Programmatic usage
+```bash
+$ bun run cli
+```
+
+**With Composio toolkits:**
+
+```bash
+$ bun run cli --toolkits github,gmail "List my unread emails"
+```
+
+**Programmatic usage:**
 
 ```ts
 import { ChatGPTAPI } from "composio-agent";
@@ -84,91 +130,96 @@ const res = await api.sendMessage("Write a concise summary of Composio.");
 console.log(res.text);
 ```
 
+> **Note:** Streaming is not available when toolkits are enabled due to OpenAI Agents SDK limitations.
+
 ## Configuration
 
-The CLI loads environment variables via `dotenv`.
-
-- `OPENAI_API_KEY` (required) - API key for OpenAI.
-- `COMPOSIO_API_KEY` (optional) - Required when using `--toolkits`.
-- `COMPOSIO_USER_ID` (optional) - Overrides the default user ID.
-- `COMPOSIO_CLI_DEBUG=1` (optional) - Verbose interactive lifecycle logs.
+| Variable             | Required | Description                            |
+| -------------------- | -------- | -------------------------------------- |
+| `OPENAI_API_KEY`     | Yes      | Your OpenAI API key                    |
+| `COMPOSIO_API_KEY`   | No       | Required when using `--toolkits`       |
+| `COMPOSIO_USER_ID`   | No       | Overrides the default Composio user ID |
+| `COMPOSIO_CLI_DEBUG` | No       | Set to `1` for verbose lifecycle logs  |
 
 You can also pass `--apiKey` directly to the CLI, or use `--model` to override the model for a session.
 
-## CLI reference
+## CLI Reference
 
-Basic usage:
-
-```bash
-npm run cli -- [prompt]
 ```
+Usage:
+  $ bun run cli -- [prompt]
 
 Options:
-
-- `-k, --apiKey <apiKey>` - OpenAI API key.
-- `-m, --model <model>` - Model to use (e.g. `gpt-4o`).
-- `-t, --timeout <timeout>` - Timeout in milliseconds.
-- `-s, --stream` - Enable streaming (default: true).
-- `--toolkits <toolkits>` - Comma-separated toolkits to load (Composio mode).
-
-Interactive slash commands:
-
-- `/help` - Show help.
-- `/model <name>` - Change model.
-- `/model list` - Show current model.
-- `/toolkits <list>` - Change toolkits (Composio mode only).
-- `/toolkits list` - Show active toolkits.
-- `/clear` - Clear the screen.
-- `/quit` or `/exit` - Exit.
-
-## How Composio mode works
-
-When `--toolkits` is provided, the CLI initializes a Composio session, loads the selected toolkits, and runs an agent using the OpenAI Agents SDK. The agent executes tools internally and returns the final response. Streaming is not available in this mode due to SDK limitations.
-
-## Development
-
-Build and watch:
-
-```bash
-bun run dev
+  -k, --apiKey <key>        OpenAI API key
+  -m, --model <model>       Model to use (e.g. gpt-4o)
+  -t, --timeout <ms>        Timeout in milliseconds
+  -s, --stream              Enable streaming (default: true)
+      --toolkits <list>     Comma-separated Composio toolkits to load
 ```
 
-Build for release:
+### Interactive Slash Commands
 
-```bash
-bun run build
-```
+| Command            | Description                            |
+| ------------------ | -------------------------------------- |
+| `/help`            | Show available commands                |
+| `/model <name>`    | Switch to a different model            |
+| `/model list`      | Show the current model                 |
+| `/toolkits <list>` | Change active toolkits (Composio mode) |
+| `/toolkits list`   | Show active toolkits                   |
+| `/clear`           | Clear the screen                       |
+| `/quit` or `/exit` | Exit the session                       |
 
-Generate docs:
+## How Composio Mode Works
 
-```bash
-bun run docs
-```
+When `--toolkits` is provided, the CLI initializes a [Composio](https://composio.dev) session, loads the selected toolkits, and runs an agent through the OpenAI Agents SDK. The agent executes tools internally and returns the final response. This gives the LLM access to real-world APIs -read emails, create GitHub issues, send Slack messages -all from your terminal.
 
-Run tests (format check):
-
-```bash
-bun run test
-```
-
-## Project structure
+## Project Structure
 
 ```
 src/
-  chatgpt-api.ts        OpenAI chat completion wrapper
-  cli.ts                CLI entrypoint
-  composio-agent.ts     Composio agent integration
-  fetch.ts              Fetch helper
-  fetch-sse.ts          SSE streaming helper
-  stream-async-iterable.ts
-  types.ts              Shared types
-  utils.ts              Model utilities
+├── cli.ts                  CLI entrypoint with interactive REPL
+├── gpt-api.ts              OpenAI chat completion wrapper
+├── composio-agent.ts       Composio toolkit integration
+├── types.ts                Shared TypeScript interfaces
+├── utils.ts                Model validation & token limits
+├── index.ts                Public API exports
+├── fetch.ts                HTTP fetch helper
+├── fetch-sse.ts            Server-Sent Events streaming
+└── stream-async-iter.ts    Async iterable stream utilities
 ```
 
-## Contributing
+## Development
 
-Issues and PRs are welcome. Please keep changes focused and add clear reproduction steps for bugs.
+```bash
+# Watch mode
+$ bun run dev
+
+# Production build
+$ bun run build
+
+# Generate docs
+$ bun run docs
+
+# Run tests (format check)
+$ bun run test
+```
+
+## Credits
+
+This project is built on top of these excellent open-source projects:
+
+- [OpenAI](https://openai.com/) -LLM provider
+- [Composio](https://composio.dev/) -Toolkit integrations for AI agents
+- [OpenAI Agents SDK](https://github.com/openai/openai-agents-js) -Agent orchestration
+- [tiktoken](https://github.com/openai/tiktoken) -Token counting
+- [cac](https://github.com/cacjs/cac) -CLI argument parsing
+- [chalk](https://github.com/chalk/chalk) -Terminal styling
+- [ora](https://github.com/sindresorhus/ora) -Elegant terminal spinners
 
 ## License
 
-MIT - see `LICENSE`.
+[MIT](LICENSE)
+
+---
+
+> GitHub [@shricodev](https://github.com/shricodev)
