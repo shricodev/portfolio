@@ -2,21 +2,19 @@ import * as prod from 'react/jsx-runtime'
 import { unified, type PluggableList } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
-import remarkUnwrapImages from 'remark-unwrap-images'
 import remarkRehype from 'remark-rehype'
 import rehypeRaw from 'rehype-raw'
+import rehypeSanitize from 'rehype-sanitize'
+import rehypeUnwrapImages from 'rehype-unwrap-images'
 import rehypePrettyCode from 'rehype-pretty-code'
 import rehypeReact, { type Options as RehypeReactOptions } from 'rehype-react'
 import type { ComponentProps, ReactNode } from 'react'
 import { PRETTY_CODE_OPTIONS } from '@/lib/mdx-options'
-import {
-  FallbackLink,
-  TweetEmbed,
-  YouTubeEmbed,
-} from '@/components/mdx/embeds'
+import { FallbackLink, TweetEmbed, YouTubeEmbed } from '@/components/mdx/embeds'
 import { EmbedBoundary } from '@/components/mdx/embed-boundary'
 import { ZoomableImage } from '@/components/mdx/zoomable-image'
 import { CodeBlock } from '@/components/mdx/code-block'
+import { MARKDOWN_SANITIZE_SCHEMA } from '@/lib/markdown-sanitize'
 
 interface MarkdownProps {
   source: string
@@ -127,10 +125,11 @@ export default async function Markdown({
     const file = await unified()
       .use(remarkParse)
       .use(remarkGfm)
-      .use(remarkUnwrapImages)
       .use(remarkPlugins)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
+      .use(rehypeUnwrapImages)
+      .use(rehypeSanitize, MARKDOWN_SANITIZE_SCHEMA)
       .use(rehypePrettyCode, PRETTY_CODE_OPTIONS)
       .use(rehypeReact, rehypeReactOptions)
       .process(normalized)
@@ -139,7 +138,7 @@ export default async function Markdown({
   } catch (error) {
     console.error('Markdown render failed', error)
     return (
-      <div className='rounded-md border border-destructive/50 bg-destructive/5 px-4 py-3 text-sm text-muted-foreground'>
+      <div className='border-destructive/50 bg-destructive/5 text-muted-foreground rounded-md border px-4 py-3 text-sm'>
         This content could not be rendered. View the original source for full
         fidelity.
       </div>

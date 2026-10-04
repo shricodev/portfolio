@@ -2,9 +2,10 @@ import * as prod from 'react/jsx-runtime'
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
-import remarkUnwrapImages from 'remark-unwrap-images'
 import remarkRehype from 'remark-rehype'
 import rehypeRaw from 'rehype-raw'
+import rehypeSanitize from 'rehype-sanitize'
+import rehypeUnwrapImages from 'rehype-unwrap-images'
 import rehypePrettyCode from 'rehype-pretty-code'
 import rehypeReact, { type Options as RehypeReactOptions } from 'rehype-react'
 import { visit } from 'unist-util-visit'
@@ -12,16 +13,13 @@ import { toString } from 'hast-util-to-string'
 import type { Element, Root } from 'hast'
 import type { ComponentProps, ReactNode } from 'react'
 import { PRETTY_CODE_OPTIONS } from '@/lib/mdx-options'
-import {
-  FallbackLink,
-  TweetEmbed,
-  YouTubeEmbed,
-} from '@/components/mdx/embeds'
+import { FallbackLink, TweetEmbed, YouTubeEmbed } from '@/components/mdx/embeds'
 import { EmbedBoundary } from '@/components/mdx/embed-boundary'
 import { ZoomableImage } from '@/components/mdx/zoomable-image'
 import { CodeBlock } from '@/components/mdx/code-block'
 import { remarkDevtoEmbeds } from '@/lib/blogs/remark-devto-embeds'
 import { createSlugger } from '@/lib/slugify'
+import { MARKDOWN_SANITIZE_SCHEMA } from '@/lib/markdown-sanitize'
 
 export interface TocItem {
   depth: 2 | 3 | 4
@@ -62,9 +60,7 @@ const EMBED_COMPONENTS = {
         fallback={
           <FallbackLink
             kind='tweet'
-            target={
-              tweetId ? `https://x.com/i/status/${tweetId}` : id
-            }
+            target={tweetId ? `https://x.com/i/status/${tweetId}` : id}
           />
         }
       >
@@ -139,10 +135,11 @@ export async function renderBlogContent(source: string): Promise<RenderedBlog> {
     const file = await unified()
       .use(remarkParse)
       .use(remarkGfm)
-      .use(remarkUnwrapImages)
       .use(remarkDevtoEmbeds)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
+      .use(rehypeUnwrapImages)
+      .use(rehypeSanitize, MARKDOWN_SANITIZE_SCHEMA)
       .use(rehypeCollectHeadings(toc))
       .use(rehypePrettyCode, PRETTY_CODE_OPTIONS)
       .use(rehypeReact, rehypeReactOptions)
@@ -153,7 +150,7 @@ export async function renderBlogContent(source: string): Promise<RenderedBlog> {
     console.error('Blog markdown render failed', error)
     return {
       content: (
-        <div className='rounded-md border border-destructive/50 bg-destructive/5 px-4 py-3 text-sm text-muted-foreground'>
+        <div className='border-destructive/50 bg-destructive/5 text-muted-foreground rounded-md border px-4 py-3 text-sm'>
           This content could not be rendered. View the original source for full
           fidelity.
         </div>
