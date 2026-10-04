@@ -6,14 +6,6 @@ import { NavDropdown } from '@/components/nav-dropdown'
 import { NAV_LINKS } from '@/lib/constants'
 import { isActiveNavPath } from '@/lib/utils'
 import { useActivePathname } from '@/hooks/use-active-pathname'
-import { Poppins } from 'next/font/google'
-
-const poppins = Poppins({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-poppins',
-  weight: ['700'],
-})
 
 export const Navbar = () => {
   const pathName = useActivePathname()
@@ -37,13 +29,13 @@ export const Navbar = () => {
 
             <Link
               href={homeLink}
-              className={`${poppins.className} select-none flex-nowrap text-2xl font-bold uppercase`}
+              className='flex-nowrap text-2xl font-bold uppercase select-none'
             >
               shrijal.
             </Link>
           </div>
 
-          <div className='ml-0 hidden items-center justify-between gap-6 font-semibold text-muted-foreground sm:ml-auto sm:flex'>
+          <div className='text-muted-foreground ml-0 hidden items-center justify-between gap-6 font-semibold sm:ml-auto sm:flex'>
             <ul className='flex items-center gap-6'>
               {NAV_LINKS.map(link => (
                 <li key={link.name}>

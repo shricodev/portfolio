@@ -16,23 +16,43 @@ import { createLimiter } from '@/lib/blogs/limit'
 // burst past the limit and trigger 429s.
 const devtoLimit = createLimiter(2)
 
-async function fetchDevto<T>(path: string, retries = 8): Promise<T> {
-  return devtoLimit(async () => {
-    for (let attempt = 0; attempt < retries; attempt++) {
-      const res = await fetch(`${DEVTO_API_BASE}${path}`, {
-        next: { revalidate: 3600 },
-      })
+const DEVTO_REQUEST_TIMEOUT_MS = 10_000
 
-      if (res.status === 429 && attempt < retries - 1) {
-        // Honour the server's Retry-After when present; otherwise back
-        // off exponentially with a 30s cap. Add up to 50% jitter so
-        // sibling workers don't dogpile the same retry window.
-        const retryAfter = res.headers.get('retry-after')
-        const base = retryAfter
-          ? Math.max(1000, Number.parseInt(retryAfter, 10) * 1000)
-          : Math.min(Math.pow(2, attempt) * 1000, 30_000)
-        const delay = base + Math.random() * base * 0.5
-        await new Promise(resolve => setTimeout(resolve, delay))
+async function waitForRetry(
+  retryAfter: string | null,
+  attempt: number,
+): Promise<void> {
+  const parsedRetryAfter = retryAfter
+    ? Number.parseInt(retryAfter, 10) * 1000
+    : Number.NaN
+  const base = Number.isFinite(parsedRetryAfter)
+    ? Math.max(1000, parsedRetryAfter)
+    : Math.min(Math.pow(2, attempt) * 1000, 10_000)
+  const delay = base + Math.random() * base * 0.25
+  await new Promise(resolve => setTimeout(resolve, delay))
+}
+
+async function fetchDevto<T>(path: string, retries = 4): Promise<T> {
+  return devtoLimit(async () => {
+    let lastError: unknown
+
+    for (let attempt = 0; attempt < retries; attempt++) {
+      let res: Response
+      try {
+        res = await fetch(`${DEVTO_API_BASE}${path}`, {
+          next: { revalidate: 3600 },
+          signal: AbortSignal.timeout(DEVTO_REQUEST_TIMEOUT_MS),
+        })
+      } catch (error) {
+        lastError = error
+        if (attempt === retries - 1) break
+        await waitForRetry(null, attempt)
+        continue
+      }
+
+      const retryable = res.status === 429 || res.status >= 500
+      if (retryable && attempt < retries - 1) {
+        await waitForRetry(res.headers.get('retry-after'), attempt)
         continue
       }
 
@@ -43,7 +63,9 @@ async function fetchDevto<T>(path: string, retries = 8): Promise<T> {
       return res.json() as Promise<T>
     }
 
-    throw new Error('Dev.to API: max retries exceeded')
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('Dev.to API: max retries exceeded')
   })
 }
 
@@ -57,12 +79,14 @@ function normalizeDevtoArticle(article: TDevtoArticle): TBlogCardMetadata {
     publishedAt: article.published_at,
     updatedAt: article.edited_at ?? undefined,
     slug: article.slug,
-    tags: (
-      Array.isArray(article.tag_list)
-        ? article.tag_list
-        : typeof article.tag_list === 'string'
-          ? (article.tag_list as string).split(',').map(t => t.trim()).filter(Boolean)
-          : []
+    tags: (Array.isArray(article.tag_list)
+      ? article.tag_list
+      : typeof article.tag_list === 'string'
+        ? (article.tag_list as string)
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean)
+        : []
     ).map(name => ({ name })),
     author: { name: article.user.name },
     source: 'devto',
@@ -144,4 +168,3 @@ export async function getDevtoPostBySlug(
     return null
   }
 }
-

@@ -8,11 +8,10 @@ import {
   DevToIcon,
   FreeCodeCampIcon,
 } from '@/components/icons'
-import { formatDate } from '@/lib/utils'
+import { formatDate, serializeJsonLd } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { UserAvatar } from '@/components/user-avatar'
 import {
-  getAllBlogPostSlugs,
   getBlogPostBySlug,
   getBlogPostCardBySlug,
   decodeSourceSlug,
@@ -32,18 +31,6 @@ interface Props {
   }>
 }
 
-export async function generateStaticParams() {
-  try {
-    const slugs = await getAllBlogPostSlugs()
-    return slugs
-      .filter((s): s is { slug: string } => Boolean(s?.slug))
-      .map(s => ({ slug: s.slug }))
-  } catch (error) {
-    console.error('Error generating static params for blogs:', error)
-    return []
-  }
-}
-
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { slug } = await props.params
   const DEFAULT_METADATA = {
@@ -59,9 +46,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const { title, seo, brief, coverImage, sourceUrl } = post
     const description =
       seo?.description || brief || DEFAULT_METADATA.description
-    const imageData = coverImage
-      ? { images: [{ url: coverImage }] }
-      : undefined
+    const imageData = coverImage ? { images: [{ url: coverImage }] } : undefined
 
     const baseMetadata = { title, description }
 
@@ -71,6 +56,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       // them instead of treating this page as duplicate content.
       alternates: {
         canonical: sourceUrl,
+      },
+      robots: {
+        index: false,
+        follow: true,
       },
       openGraph: {
         ...baseMetadata,
@@ -114,9 +103,30 @@ export default async function Page(props: Props) {
   const { source } = decodeSourceSlug(slug)
   const sourceName = source === 'devto' ? 'DEV' : 'freeCodeCamp'
   const { content, toc } = await renderBlogContent(post.content.markdown)
+  const internalUrl = new URL(`/blogs/${slug}`, BASE_URL).toString()
+  const blogJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.seo?.description || post.brief,
+    image: post.coverImage,
+    datePublished: post.publishedAt,
+    dateModified: post.updatedAt ?? post.publishedAt,
+    mainEntityOfPage: post.sourceUrl,
+    url: internalUrl,
+    author: {
+      '@type': 'Person',
+      name: post.author?.name || 'Shrijal Acharya',
+      url: BASE_URL,
+    },
+  }
 
   return (
     <section className='pb-10'>
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(blogJsonLd) }}
+      />
       <BlogToc headings={toc} />
       <Suspense
         fallback={
@@ -137,14 +147,14 @@ export default async function Page(props: Props) {
             fill
             sizes='(max-width: 768px) 100vw, 750px'
             className='object-cover'
-            priority
+            preload
             unoptimized={post.coverImage.toLowerCase().endsWith('.gif')}
           />
         </div>
       ) : null}
 
       <header>
-        <div className='mb-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground'>
+        <div className='text-muted-foreground mb-3 flex flex-wrap items-center gap-2 text-sm'>
           {source === 'devto' ? (
             <DevToIcon className='size-4' />
           ) : (
@@ -156,7 +166,7 @@ export default async function Page(props: Props) {
               href={post.sourceUrl}
               target='_blank'
               rel='canonical noreferrer noopener'
-              className='font-semibold text-foreground underline underline-offset-4 hover:text-muted-foreground'
+              className='text-foreground hover:text-muted-foreground font-semibold underline underline-offset-4'
             >
               {sourceName}
             </a>
@@ -169,12 +179,12 @@ export default async function Page(props: Props) {
           )}
         </div>
 
-        <h1 className='text-3xl font-bold decoration-border/75 decoration-2'>
+        <h1 className='decoration-border/75 text-3xl font-bold decoration-2'>
           {post.title}
         </h1>
 
         {post.subtitle ? (
-          <p className='py-3 text-xl font-semibold text-muted-foreground'>
+          <p className='text-muted-foreground py-3 text-xl font-semibold'>
             {post.subtitle}
           </p>
         ) : null}
@@ -183,21 +193,21 @@ export default async function Page(props: Props) {
           <Link href='/contact' className='flex items-center'>
             <UserAvatar className='mr-2 size-8' />
             {post.author?.name ? (
-              <span className='hidden text-sm font-semibold text-muted-foreground hover:underline hover:underline-offset-2 sm:inline'>
+              <span className='text-muted-foreground hidden text-sm font-semibold hover:underline hover:underline-offset-2 sm:inline'>
                 {post.author?.name}
               </span>
             ) : null}
             <span className='divider mr-1 sm:mx-1'>·</span>
           </Link>
           {post.publishedAt ? (
-            <span className='text-sm text-muted-foreground'>
+            <span className='text-muted-foreground text-sm'>
               {formatDate({ date: post.publishedAt, short: false })}
             </span>
           ) : null}
         </div>
 
         {(post.reactionsCount > 0 || post.commentsCount > 0) && (
-          <div className='mt-3 flex items-center gap-4 text-sm text-muted-foreground'>
+          <div className='text-muted-foreground mt-3 flex items-center gap-4 text-sm'>
             {post.reactionsCount > 0 && (
               <span className='flex items-center gap-1'>
                 <HeartIcon className='size-4' />
@@ -228,10 +238,12 @@ export default async function Page(props: Props) {
         ) : null}
       </header>
 
-      <main className='prose mt-12 max-w-3xl dark:prose-invert'>{content}</main>
+      <article className='prose dark:prose-invert mt-12 max-w-3xl'>
+        {content}
+      </article>
 
-      <div className='mt-10 flex items-center gap-4 text-sm font-medium text-muted-foreground'>
-        <div className='flex items-center gap-1 hover:text-foreground hover:transition'>
+      <div className='text-muted-foreground mt-10 flex items-center gap-4 text-sm font-medium'>
+        <div className='hover:text-foreground flex items-center gap-1 hover:transition'>
           <ArrowUpRightIcon className='size-4' />
           <a href={post.sourceUrl} target='_blank' rel='noreferrer noopener'>
             View on {sourceName}

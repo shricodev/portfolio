@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useDebounce } from 'use-debounce'
@@ -25,39 +25,31 @@ export const Search = ({
   const searchParams = useSearchParams()
 
   const normalizedQuery = query ?? ''
-  const [filterText, setFilterText] = useState(normalizedQuery)
-  const [prevQuery, setPrevQuery] = useState(normalizedQuery)
+  const [searchState, setSearchState] = useState(() => ({
+    filterText: normalizedQuery,
+    previousQuery: normalizedQuery,
+    locallyEnteredQueries: new Set<string>(),
+  }))
+  const { filterText } = searchState
   const [debouncedQuery] = useDebounce(filterText, debounceTime)
-
-  // Every value we push to the URL ourselves. Each push round-trips through
-  // the server and comes back as the `query` prop, but in prod that's slow,
-  // so a stale echo can land after the user has typed more. We remember what
-  // we pushed and ignore it on the way back so it can't clobber newer input.
-  const pushedValues = useRef<Set<string>>(new Set([normalizedQuery]))
 
   // Sync input only from genuinely external navigation (tag-click on a card,
   // back/forward), never from an echo of our own debounced push.
-  if (normalizedQuery !== prevQuery) {
-    setPrevQuery(normalizedQuery)
-    if (
-      !pushedValues.current.has(normalizedQuery) &&
-      normalizedQuery !== filterText
-    ) {
-      setFilterText(normalizedQuery)
-    }
+  if (normalizedQuery !== searchState.previousQuery) {
+    const locallyEnteredQueries = new Set(searchState.locallyEnteredQueries)
+    const isLocalEcho = locallyEnteredQueries.delete(normalizedQuery)
+    setSearchState({
+      filterText: isLocalEcho ? filterText : normalizedQuery,
+      previousQuery: normalizedQuery,
+      locallyEnteredQueries,
+    })
   }
 
   useEffect(() => {
     // Wait for useDebounce to settle on the latest input before pushing,
     // which prevents an intermediate stale value from being echoed to the URL.
     if (debouncedQuery !== filterText) return
-    if (debouncedQuery === normalizedQuery) {
-      // URL has caught up to the input, so older pushes are settled.
-      pushedValues.current = new Set([normalizedQuery])
-      return
-    }
-
-    pushedValues.current.add(debouncedQuery)
+    if (debouncedQuery === normalizedQuery) return
 
     const newSearchParams = new URLSearchParams(searchParams)
     if (debouncedQuery) {
@@ -67,12 +59,26 @@ export const Search = ({
     }
     const qs = newSearchParams.toString()
     router.push(qs ? `/${endpoint}?${qs}` : `/${endpoint}`)
-  }, [debouncedQuery, filterText, normalizedQuery, endpoint, router, searchParams])
+  }, [
+    debouncedQuery,
+    filterText,
+    normalizedQuery,
+    endpoint,
+    router,
+    searchParams,
+  ])
+
+  const updateFilter = (value: string) => {
+    setSearchState(previous => {
+      const locallyEnteredQueries = new Set(previous.locallyEnteredQueries)
+      locallyEnteredQueries.add(value)
+      return { ...previous, filterText: value, locallyEnteredQueries }
+    })
+  }
 
   const resetFilter = () => {
-    setFilterText('')
+    updateFilter('')
     if (!normalizedQuery) return
-    pushedValues.current.add('')
     const newSearchParams = new URLSearchParams(searchParams)
     newSearchParams.delete(SEARCH_QUERY_PARAM)
     const qs = newSearchParams.toString()
@@ -83,10 +89,11 @@ export const Search = ({
     <div className='mb-4 flex items-center gap-3'>
       <Input
         type='text'
+        aria-label={`Search ${endpoint}`}
         placeholder={placeholder}
         className='h-9 w-full sm:w-1/2'
         value={filterText}
-        onChange={event => setFilterText(event.target.value)}
+        onChange={event => updateFilter(event.target.value)}
       />
 
       {filterText.length > 0 ? (
@@ -94,7 +101,7 @@ export const Search = ({
           size='default'
           variant='secondary'
           onClick={resetFilter}
-          className='h-8 px-2 text-zinc-700 dark:text-zinc-400 lg:px-3'
+          className='h-8 px-2 text-zinc-700 lg:px-3 dark:text-zinc-400'
         >
           Reset
           <CrossIcon className='size-5' />

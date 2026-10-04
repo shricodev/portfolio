@@ -4,6 +4,26 @@ import { getProjectsMetadata } from '@/lib/projects'
 import RSS from 'rss'
 
 export async function GET() {
+  let blogs: Awaited<ReturnType<typeof getBlogPostsCardMeta>>['blogs'] = []
+  try {
+    const result = await getBlogPostsCardMeta({ all: true })
+    blogs = result.blogs
+  } catch (error) {
+    console.error('Failed to fetch blogs for RSS:', error)
+  }
+
+  const projects = getProjectsMetadata({ all: true })
+  const itemDates = [
+    ...blogs.map(blog => new Date(blog.updatedAt ?? blog.publishedAt)),
+    ...projects.map(
+      project => new Date(project.updated_at || project.created_at),
+    ),
+  ].filter(date => !Number.isNaN(date.getTime()))
+  const latestItemDate = itemDates.reduce<Date | undefined>(
+    (latest, date) => (!latest || date > latest ? date : latest),
+    undefined,
+  )
+
   const feedConfig = {
     title: 'Shrijal Acharya',
     description:
@@ -13,8 +33,7 @@ export async function GET() {
     image_url: new URL('/images/shrijal-acharya.webp', BASE_URL).toString(),
     author: `${PUBLIC_GMAIL} (Shrijal Acharya)`,
     copyright: `${new Date().getFullYear()} Shrijal Acharya. All rights reserved.`,
-    // Expliicitely set the feed date to 'December 4, 2024' as this is the day when the feed is made public.
-    pubDate: new Date('2024-12-04T00:00:00Z'),
+    pubDate: latestItemDate ?? new Date(),
     language: 'en',
     categories: ['Blogs', 'Projects'],
     generator: 'RSS Feed for Node and Next.js',
@@ -53,21 +72,22 @@ export async function GET() {
   }
 
   // Add blog posts to RSS feed
-  const { blogs } = await getBlogPostsCardMeta({ all: true })
   blogs.forEach(blog => {
     createRSSItem({
       title: blog.title,
       description: blog.brief
         ? blog.brief
         : `${blog.title} blog by Shrijal Acharya`,
-      url: new URL(`/blogs/${encodeSourceSlug(blog.source, blog.slug)}`, BASE_URL).toString(),
+      url: new URL(
+        `/blogs/${encodeSourceSlug(blog.source, blog.slug)}`,
+        BASE_URL,
+      ).toString(),
       date: new Date(blog.publishedAt),
       author: blog.author.name,
       category: 'Blogs',
     })
   })
 
-  const projects = getProjectsMetadata({ all: true })
   projects.forEach(project => {
     createRSSItem({
       title: project.title,
@@ -82,6 +102,9 @@ export async function GET() {
 
   const xml = rss.xml()
   return new Response(xml, {
-    headers: { 'Content-Type': 'application/xml' },
+    headers: {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+    },
   })
 }

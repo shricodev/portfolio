@@ -1,5 +1,4 @@
 import { Contact } from '@/components/contact'
-import { NewsletterForm } from '@/components/newsletter-form'
 import { BASE_URL, PUBLIC_GMAIL } from '@/lib/constants'
 import type { Metadata } from 'next'
 
@@ -21,11 +20,11 @@ export default function Page() {
           I’m open to full-time work, freelance and collaborations. Let’s
           connect if you have a project, ideas to discuss, or just want to chat!
         </p>
-        <p className='font-medium text-muted-foreground text-zinc-800 dark:text-zinc-300'>
+        <p className='text-muted-foreground font-medium text-zinc-800 dark:text-zinc-300'>
           Feel free to reach out to me at{' '}
           <a
             href={`mailto:${PUBLIC_GMAIL}`}
-            className='font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground hover:transition'
+            className='text-muted-foreground hover:text-foreground font-medium underline underline-offset-4 hover:transition'
           >
             {PUBLIC_GMAIL}
           </a>{' '}
@@ -34,7 +33,6 @@ export default function Page() {
       </div>
 
       <Contact />
-      <NewsletterForm />
     </section>
   )
 }

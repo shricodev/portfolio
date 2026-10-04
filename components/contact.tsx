@@ -29,6 +29,7 @@ export const Contact = () => {
       name: '',
       email: '',
       message: '',
+      website: '',
     },
   })
 
@@ -52,6 +53,24 @@ export const Contact = () => {
           className='mt-16 lg:flex-auto'
           noValidate
         >
+          <FormField
+            control={form.control}
+            name='website'
+            render={({ field }) => (
+              <div
+                aria-hidden='true'
+                className='absolute top-auto left-[-10000px] size-px overflow-hidden'
+              >
+                <label htmlFor='website'>Leave this field empty</label>
+                <input
+                  id='website'
+                  tabIndex={-1}
+                  autoComplete='off'
+                  {...field}
+                />
+              </div>
+            )}
+          />
           <div className='grid grid-cols-1 gap-6 sm:grid-cols-2'>
             <div>
               <FormField
@@ -59,13 +78,15 @@ export const Contact = () => {
                 name='name'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='text-xs font-bold uppercase text-zinc-700 dark:text-zinc-400'>
+                    <FormLabel className='text-xs font-bold text-zinc-700 uppercase dark:text-zinc-400'>
                       Name
                     </FormLabel>
                     <FormControl>
                       <Input
                         id='name'
                         autoFocus
+                        autoComplete='name'
+                        maxLength={80}
                         placeholder='Enter your name'
                         {...field}
                       />
@@ -82,12 +103,15 @@ export const Contact = () => {
                 name='email'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='text-xs font-bold uppercase text-zinc-700 dark:text-zinc-400'>
+                    <FormLabel className='text-xs font-bold text-zinc-700 uppercase dark:text-zinc-400'>
                       Email
                     </FormLabel>
                     <FormControl>
                       <Input
                         id='email'
+                        type='email'
+                        autoComplete='email'
+                        maxLength={254}
                         placeholder='Enter your email'
                         {...field}
                       />
@@ -104,13 +128,14 @@ export const Contact = () => {
                 name='message'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='text-xs font-bold uppercase text-zinc-700 dark:text-zinc-400'>
+                    <FormLabel className='text-xs font-bold text-zinc-700 uppercase dark:text-zinc-400'>
                       Message
                     </FormLabel>
                     <FormControl>
                       <Textarea
                         rows={8}
                         id='message'
+                        maxLength={5000}
                         placeholder='Enter your message...'
                         className='max-h-72'
                         {...field}
@@ -134,11 +159,11 @@ export const Contact = () => {
               Contact me
             </Button>
           </div>
-          <p className='mt-4 text-xs text-muted-foreground'>
+          <p className='text-muted-foreground mt-4 text-xs'>
             By submitting this form, I agree to the{' '}
             <Link
               href='/privacy'
-              className='font-bold hover:text-foreground hover:underline hover:underline-offset-2 hover:transition'
+              className='hover:text-foreground font-bold hover:underline hover:underline-offset-2 hover:transition'
               target='_blank'
               rel='noreferrer noopener'
             >

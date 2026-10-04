@@ -25,6 +25,8 @@ const parser = new XMLParser({
   trimValues: true,
 })
 
+const FCC_REQUEST_TIMEOUT_MS = 10_000
+
 function toArray<T>(value: T | T[] | undefined): T[] {
   if (value == null) return []
   return Array.isArray(value) ? value : [value]
@@ -37,12 +39,7 @@ function text(value: unknown): string {
 // FCC URLs look like https://www.freecodecamp.org/news/<slug>/ — use the last
 // path segment as the slug.
 function slugFromLink(link: string): string {
-  return (
-    link
-      .replace(/\/+$/, '')
-      .split('/')
-      .pop() ?? ''
-  )
+  return link.replace(/\/+$/, '').split('/').pop() ?? ''
 }
 
 function estimateReadTime(content: string): number {
@@ -53,6 +50,7 @@ function estimateReadTime(content: string): number {
 async function fetchRssItems(): Promise<TRssItem[]> {
   const res = await fetch(FREECODECAMP_RSS_URL, {
     next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(FCC_REQUEST_TIMEOUT_MS),
   })
   if (!res.ok) {
     console.error('Failed to fetch freeCodeCamp RSS feed:', res.status)
@@ -73,7 +71,8 @@ function itemToCardMetadata(item: TRssItem): TBlogCardMetadata | null {
   if (!slug) return null
 
   const guid = typeof item.guid === 'string' ? item.guid : item.guid?.['#text']
-  const coverImage = text(toArray(item['media:content'])[0]?.['@_url']) || undefined
+  const coverImage =
+    text(toArray(item['media:content'])[0]?.['@_url']) || undefined
   const brief = text(item.description) || undefined
   const tags = toArray(item.category)
     .map(c => text(c).replace(/^#/, '').trim())

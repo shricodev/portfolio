@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/user-avatar'
 import { BASE_URL, PROJECT_FILTER_TOPIC } from '@/lib/constants'
 import { getProjectByTitle, getProjectsMetadata } from '@/lib/projects'
-import { formatDate } from '@/lib/utils'
+import { formatDate, serializeJsonLd } from '@/lib/utils'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -45,9 +45,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
     if (!project) throw new Error(`Project not found: ${projectName}`)
 
-    const { title, description, clone_url } = project.metadata
-    const repoUrl = clone_url.replace(/\.git$/, '')
-
+    const { title, description } = project.metadata
     const baseMetadata = {
       title,
       description: description || DEFAULT_METADATA.description,
@@ -55,10 +53,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
     return {
       ...baseMetadata,
-      // Canonical points at the GitHub repo so search engines treat that as the
-      // source of truth for the README content rendered below.
       alternates: {
-        canonical: repoUrl,
+        canonical: new URL(`/projects/${projectName}`, BASE_URL).toString(),
       },
       openGraph: {
         ...baseMetadata,
@@ -105,9 +101,30 @@ export default async function Page(props: Props) {
   const { metadata, content } = project
   const { title, author, clone_url, topics, created_at } = metadata
   const projectCreatedDate = formatDate({ date: created_at, short: true })
+  const projectUrl = new URL(`/projects/${projectName}`, BASE_URL).toString()
+  const projectJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareSourceCode',
+    name: title,
+    description: metadata.description,
+    url: projectUrl,
+    codeRepository: clone_url.replace(/\.git$/, ''),
+    programmingLanguage: metadata.language || undefined,
+    dateCreated: metadata.created_at,
+    dateModified: metadata.updated_at,
+    author: {
+      '@type': 'Person',
+      name: 'Shrijal Acharya',
+      url: BASE_URL,
+    },
+  }
 
   return (
     <section className='pb-10'>
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(projectJsonLd) }}
+      />
       <Suspense
         fallback={
           <Button disabled variant='secondary' className='mb-8 flex gap-2'>
@@ -193,7 +210,7 @@ export default async function Page(props: Props) {
         )}
       </header>
 
-      <main className='prose dark:prose-invert mt-12 max-w-3xl'>
+      <article className='prose dark:prose-invert mt-12 max-w-3xl'>
         {content.trim().length > 0 ? (
           <Markdown projectName={projectName} source={content} />
         ) : (
@@ -208,7 +225,7 @@ export default async function Page(props: Props) {
             </div>
           </div>
         )}
-      </main>
+      </article>
 
       <div className='text-muted-foreground mt-10 flex items-center gap-1 text-sm font-medium'>
         <div className='hover:text-foreground flex items-center gap-1 hover:transition'>
