@@ -1,0 +1,88 @@
+---
+title: "lovable-build-tensorlake-aws"
+description: "lovable build with tensorlake and aws. a DIY build that's documented on freeCodeCamp: https://www.freecodecamp.org/news/build-your-own-ai-app-builder-with-next-js-aws-and-sandboxes/"
+clone_url: "https://github.com/shricodev/lovable-build-tensorlake-aws.git"
+language: "TypeScript"
+homepage: ""
+topics:
+  - "aws"
+  - "freecodecamp"
+  - "lovable"
+  - "nextjs"
+  - "showcase"
+  - "tensorlake"
+created_at: "2026-09-27T17:41:51Z"
+updated_at: "2026-10-04T17:24:31Z"
+---
+
+# Lovable DIY
+
+A self-hosted app builder inspired by Lovable, Bolt.new, and v0. An agent writes the app in an isolated [Tensorlake](https://tensorlake.ai) sandbox while you follow the live preview. You can edit through chat, restore earlier versions, share projects, and publish static builds.
+
+Built by [@shricodev](https://github.com/shricodev).
+
+## Local setup
+
+```bash
+pnpm install
+cp .env.example .env        # then fill in TENSORLAKE_API_KEY + an LLM key, and AUTH_SECRET (openssl rand -base64 32)
+pnpm infra:up               # postgres, minio
+pnpm s3:setup               # create + lock down the bucket
+pnpm spike spikes/01-create-run.ts   # sanity-check Tensorlake access
+pnpm db:migrate             # create tables
+pnpm sandbox:build-base     # build the warm base snapshot (~45 s, once per template change)
+pnpm dev                    # web :3000, preview gateway :4000, worker
+pnpm sandbox:bench -- --keep   # cold vs snapshot vs fork timings; leaves one preview running
+pnpm agent:run --fixture habit-tracker   # one full agent turn (or: pnpm agent:run "a pomodoro timer")
+```
+
+Open http://localhost:3000 and sign in with the dev login (any username). Previews are served from `http://<project-id>.preview.localhost:4000` and published sites from `http://<slug>.app.localhost:4000`, each on its own origin (`*.localhost` resolves to 127.0.0.1 in modern browsers).
+
+MinIO console: http://localhost:9001 (lovable-diy / lovable-diy-dev-secret).
+
+## Tests and evals
+
+```bash
+pnpm test               # unit tests (no credentials needed; what CI runs)
+pnpm test:integration   # real sandbox + Postgres: network egress, secrets, path escapes, crash recovery, quotas
+pnpm eval               # every fixture × Claude Sonnet 5 and GPT-5.5; JSON + HTML report to .lovable-diy/evals and S3
+```
+
+## Repository layout
+
+| Path               | What                                                                          |
+| ------------------ | ----------------------------------------------------------------------------- |
+| `apps/web`         | Next.js UI, auth, APIs, SSE, published-site serving                           |
+| `apps/worker`      | pg-boss jobs: agent turns (with heal loop), remix/duplicate, reaper; eval CLI |
+| `apps/gateway`     | preview reverse proxy (HTTP + WebSocket), wake-on-request                     |
+| `packages/sandbox` | the only code that talks to Tensorlake                                        |
+| `packages/llm`     | Anthropic / OpenAI / Ollama behind one interface                              |
+| `packages/db`      | Drizzle schema, migrations, queries                                           |
+| `packages/storage` | the only code that talks to S3                                                |
+| `packages/shared`  | env validation, logging, errors, retry                                        |
+| `spikes/`          | Phase 0 capability proofs against real Tensorlake                             |
+| `infra/`           | docker compose, S3 setup + IAM policy, sandbox image                          |
+
+## Storage layout (one private bucket)
+
+| Prefix                                | Contents                             |
+| ------------------------------------- | ------------------------------------ |
+| `exports/<project>/<id>.zip`          | source exports (expire after 7 days) |
+| `screenshots/<project>/<version>.png` | version thumbnails                   |
+| `published/<slug>/<version>/…`        | published static builds              |
+| `evals/<run-id>/…`                    | eval reports                         |
+| `uploads/<user>/<id>`                 | prompt image attachments             |
+
+## Real S3 setup
+
+1. Create an IAM user (or role) for the app and attach [`infra/s3/iam-policy.json`](infra/s3/iam-policy.json) with `LOVABLE_DIY_BUCKET_NAME` replaced. It grants object read/write/delete and list on that one bucket only.
+2. For the one-time bootstrap, temporarily also attach [`infra/s3/iam-policy-setup.json`](infra/s3/iam-policy-setup.json) (create bucket, public-access block, lifecycle, CORS), run `pnpm s3:setup`, then detach it.
+3. In `.env`: remove `S3_ENDPOINT` and `S3_FORCE_PATH_STYLE`, set `S3_BUCKET`, `S3_REGION`, and the key pair.
+
+The bucket stays private (all four public-access blocks on). Browsers only ever get short-lived presigned URLs.
+
+## GitHub OAuth (optional locally)
+
+1. Go to GitHub → Settings → Developer settings → OAuth Apps → **New OAuth App**.
+2. Set the homepage URL to `http://localhost:3000` and the authorization callback URL to `http://localhost:3000/api/auth/callback/github`.
+3. Put the client ID and secret in `.env` as `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`, then restart `pnpm dev`. The login page shows "Continue with GitHub" automatically.
