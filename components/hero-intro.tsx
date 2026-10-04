@@ -14,13 +14,13 @@ export const HeroIntro = () => {
               👋
             </span>
           </h1>
-          <p className='subtitle mb-6 text-xl font-semibold text-muted-foreground'>
-            Web Dev, Cloud, and DevOps Engineer
+          <p className='subtitle text-muted-foreground mb-6 text-xl font-semibold'>
+            Developer Advocate and Software Engineer
           </p>
 
-          <div className='my-2 text-pretty font-medium leading-7 text-zinc-800 dark:text-zinc-300'>
-            I&apos;m a full-stack developer and DevOps engineer currently
-            working as a freelancer. I also contribute to
+          <div className='my-2 leading-7 font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
+            I build AI agent projects, developer tools, and technical content at
+            Composio. I also contribute to{' '}
             <CustomHoverCard
               triggerText='freeCodeCamp'
               title='freeCodeCamp'
@@ -28,8 +28,8 @@ export const HeroIntro = () => {
               dateText='Joined April 2024'
               avatarSrc='/images/freeCodeCamp.svg'
               avatarFallback='FCC'
-            />
-            and as a Lead Collaborator at
+            />{' '}
+            and as a Lead Collaborator at{' '}
             <CustomHoverCard
               triggerText='Oppia Foundation'
               title='Oppia Foundation'
@@ -37,8 +37,8 @@ export const HeroIntro = () => {
               dateText='Joined May 2023'
               avatarSrc='/images/oppia.svg'
               avatarFallback='O'
-            />
-            As an
+            />{' '}
+            As an{' '}
             <CustomHoverCard
               triggerText='MLSA'
               title='Microsoft Learn Student Ambassador'
@@ -59,13 +59,13 @@ export const HeroIntro = () => {
             alt='Profile photo of Shrijal Acharya'
             width={175}
             height={175}
-            priority
+            preload
             sizes='175px'
           />
         </div>
       </div>
 
-      <p className='mt-3 max-w-full text-pretty font-medium leading-7 text-zinc-800 dark:text-zinc-300'>
+      <p className='mt-3 max-w-full leading-7 font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
         I have <strong>{EXPERIENCE_YEARS}+</strong> years of experience, and I
         primarily work with <strong>TypeScript</strong>, <strong>Python</strong>
         , <strong>Golang</strong>, <strong>Docker</strong>, and{' '}
@@ -73,7 +73,7 @@ export const HeroIntro = () => {
         <strong>GCP</strong> and <strong>AWS</strong>.
       </p>
 
-      <div className='my-6 rounded-lg border-none bg-zinc-50 p-4 shadow-sm dark:bg-zinc-900 md:flex md:items-center'>
+      <div className='my-6 rounded-lg border-none bg-zinc-50 p-4 shadow-sm md:flex md:items-center dark:bg-zinc-900'>
         <div className='flex items-center'>
           <div className='flex flex-shrink-0 items-center justify-center'>
             <div className='hidden sm:block md:hidden'>
@@ -90,7 +90,7 @@ export const HeroIntro = () => {
 
             {/* Stats Icon Container */}
             <div
-              className='hidden h-32 w-32 flex-shrink-0 rounded-xl bg-zinc-100 p-5 dark:bg-zinc-800 md:block'
+              className='hidden h-32 w-32 flex-shrink-0 rounded-xl bg-zinc-100 p-5 md:block dark:bg-zinc-800'
               aria-hidden='true'
             >
               <ChartIcon className='text-muted-foreground' />
@@ -98,7 +98,7 @@ export const HeroIntro = () => {
           </div>
 
           <div className='ml-4'>
-            <ul className='mt-2 space-y-2 font-normal text-muted-foreground'>
+            <ul className='text-muted-foreground mt-2 space-y-2 font-normal'>
               <li className='flex items-center gap-1'>
                 <UsersGroup
                   className='size-5 flex-shrink-0'
@@ -122,9 +122,9 @@ export const HeroIntro = () => {
         </div>
       </div>
 
-      <p className='mt-3 max-w-full text-pretty font-medium leading-7 text-zinc-800 dark:text-zinc-300'>
-        I enjoy building side projects in my free time that help me automate a
-        lot of my stuffs. I love writing about my projects, cloud, web, and
+      <p className='mt-3 max-w-full leading-7 font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
+        I enjoy building side projects in my free time that help automate
+        repetitive work. I love writing about my projects, cloud, web, and
         DevOps.{' '}
         <span className='mr-1 opacity-70 dark:opacity-70'>
           (Oh, and yes, I use Vim and Arch, btw)

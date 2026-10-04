@@ -10,7 +10,6 @@ import {
   InstagramIcon,
   LeetCodeIcon,
   LinkedInIcon,
-  RedditIcon,
   TwitterIcon,
 } from '@/components/icons'
 import { Social } from '@/components/social'
@@ -45,11 +44,6 @@ const socialCategories = [
         name: 'X',
         href: 'https://x.com/shricodev',
         icon: TwitterIcon,
-      },
-      {
-        name: 'Reddit',
-        href: 'https://www.reddit.com/user/shricodev',
-        icon: RedditIcon,
       },
       {
         name: 'Instagram',

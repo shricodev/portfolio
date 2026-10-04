@@ -12,7 +12,7 @@ import {
 import { formatDate } from '@/lib/utils'
 import { TBlogCardMetadata } from '@/types/blogs'
 import { UserAvatar } from '@/components/user-avatar'
-import { Badge } from '@/components/ui/badge'
+import { badgeVariants } from '@/components/ui/badge'
 import {
   BookIcon,
   HeartIcon,
@@ -84,15 +84,15 @@ export const BlogCard = ({ blogWithMeta, searchParams }: BlogCardProps) => {
         <CardHeader>
           <div className='mb-2 flex items-center gap-2'>
             {source === 'devto' ? (
-              <DevToIcon className='size-4 text-muted-foreground' />
+              <DevToIcon className='text-muted-foreground size-4' />
             ) : (
-              <FreeCodeCampIcon className='size-4 text-muted-foreground' />
+              <FreeCodeCampIcon className='text-muted-foreground size-4' />
             )}
-            <span className='text-xs text-muted-foreground'>{sourceLabel}</span>
+            <span className='text-muted-foreground text-xs'>{sourceLabel}</span>
             {organization && (
               <>
-                <span className='text-xs text-muted-foreground'>·</span>
-                <span className='text-xs text-muted-foreground'>
+                <span className='text-muted-foreground text-xs'>·</span>
+                <span className='text-muted-foreground text-xs'>
                   {organization.name}
                 </span>
               </>
@@ -129,14 +129,18 @@ export const BlogCard = ({ blogWithMeta, searchParams }: BlogCardProps) => {
               {tags && tags.length > 0 ? (
                 <div className='flex flex-wrap gap-2 py-2'>
                   {tags.map(tag => (
-                    <Badge
+                    <button
                       key={tag.name}
-                      variant='secondary'
-                      className='cursor-pointer text-zinc-600 hover:text-zinc-800 dark:text-zinc-300 dark:hover:text-zinc-400'
+                      type='button'
+                      className={badgeVariants({
+                        variant: 'secondary',
+                        className:
+                          'text-zinc-600 hover:text-zinc-800 dark:text-zinc-300 dark:hover:text-zinc-400',
+                      })}
                       onClick={() => handleBadgeClick(tag.name)}
                     >
                       {tag.name}
-                    </Badge>
+                    </button>
                   ))}
                 </div>
               ) : null}
@@ -152,7 +156,7 @@ export const BlogCard = ({ blogWithMeta, searchParams }: BlogCardProps) => {
           </Link>
         )}
 
-        <CardFooter className='flex flex-wrap gap-x-1 gap-y-1 text-sm text-muted-foreground'>
+        <CardFooter className='text-muted-foreground flex flex-wrap gap-x-1 gap-y-1 text-sm'>
           <Link href='/contact' className='flex items-center'>
             <UserAvatar className='size-7 sm:mr-2' />
             {author ? (

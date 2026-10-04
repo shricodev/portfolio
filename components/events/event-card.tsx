@@ -49,15 +49,15 @@ function ExternalLinkIcon() {
 
 interface EventCardProps {
   event: EventItem
-  priority?: boolean
+  preload?: boolean
 }
 
-export function EventCard({ event, priority = false }: EventCardProps) {
+export function EventCard({ event, preload = false }: EventCardProps) {
   const meta = getPlatformMeta(event.platform)
   const formattedDate = formatDate({ date: event.date, short: true })
 
   return (
-    <article className='flex flex-col gap-4 rounded-lg border border-border bg-zinc-50 p-6 dark:bg-zinc-900'>
+    <article className='border-border flex flex-col gap-4 rounded-lg border bg-zinc-50 p-6 dark:bg-zinc-900'>
       <div className='flex items-start justify-between gap-3'>
         <span
           className={cn(
@@ -69,10 +69,7 @@ export function EventCard({ event, priority = false }: EventCardProps) {
           {meta.label}
         </span>
         {formattedDate && (
-          <time
-            dateTime={event.date}
-            className='text-xs text-muted-foreground'
-          >
+          <time dateTime={event.date} className='text-muted-foreground text-xs'>
             {formattedDate}
           </time>
         )}
@@ -83,11 +80,11 @@ export function EventCard({ event, priority = false }: EventCardProps) {
           href={event.postUrl}
           target='_blank'
           rel='noopener noreferrer'
-          className='text-lg font-semibold text-foreground hover:underline hover:underline-offset-4'
+          className='text-foreground text-lg font-semibold hover:underline hover:underline-offset-4'
         >
           <h2>{event.title}</h2>
         </a>
-        <p className='mt-1 text-sm text-muted-foreground'>
+        <p className='text-muted-foreground mt-1 text-sm'>
           {event.description}
         </p>
       </div>
@@ -99,7 +96,7 @@ export function EventCard({ event, priority = false }: EventCardProps) {
         target='_blank'
         rel='noopener noreferrer'
         aria-label={`${meta.viewLabel}: ${event.title}`}
-        className='group block overflow-hidden rounded-md border border-border bg-zinc-100 dark:bg-zinc-950'
+        className='group border-border block overflow-hidden rounded-md border bg-zinc-100 dark:bg-zinc-950'
       >
         <Image
           src={event.image.src}
@@ -107,7 +104,7 @@ export function EventCard({ event, priority = false }: EventCardProps) {
           width={event.image.width}
           height={event.image.height}
           sizes='(max-width: 768px) 100vw, 736px'
-          priority={priority}
+          preload={preload}
           className='h-auto w-full transition-transform duration-200 group-hover:scale-[1.01]'
         />
       </a>
@@ -116,7 +113,7 @@ export function EventCard({ event, priority = false }: EventCardProps) {
         href={event.postUrl}
         target='_blank'
         rel='noopener noreferrer'
-        className='inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground'
+        className='text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm transition-colors duration-150'
       >
         {meta.viewLabel}
         <ExternalLinkIcon />

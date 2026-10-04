@@ -30,7 +30,11 @@ export function SourceFilter({ current }: { current: BlogSourceFilter }) {
   }
 
   return (
-    <div className='mb-4 flex gap-2'>
+    <div
+      className='mb-4 flex gap-2'
+      role='group'
+      aria-label='Filter blogs by source'
+    >
       {BLOG_SOURCE_OPTIONS.map(option => {
         const active = current === option
         return (

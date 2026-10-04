@@ -19,13 +19,10 @@ export function NavDropdown() {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger
-        onClick={() => setIsOpen(prev => !prev)}
+        aria-label='Open navigation menu'
         className='flex-shrink-0'
       >
-        <HamburgerMenuIcon
-          aria-label='Menu Icon'
-          className='size-6 font-bold'
-        />
+        <HamburgerMenuIcon aria-hidden='true' className='size-6 font-bold' />
       </PopoverTrigger>
 
       <PopoverContent

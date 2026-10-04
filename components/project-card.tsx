@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { TProjectMetadata } from '@/types/projects'
-import { Badge } from '@/components/ui/badge'
+import { badgeVariants } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { GitHubIcon } from '@/components/icons'
@@ -90,13 +90,17 @@ export const ProjectCard = ({
               {language ? (
                 <>
                   <span className='divider mr-1 sm:mx-1'>•</span>
-                  <Badge
-                    variant='secondary'
-                    className='ml-1 cursor-pointer text-zinc-600 hover:text-zinc-800 dark:text-zinc-300 dark:hover:text-zinc-400'
+                  <button
+                    type='button'
+                    className={badgeVariants({
+                      variant: 'secondary',
+                      className:
+                        'ml-1 text-zinc-600 hover:text-zinc-800 dark:text-zinc-300 dark:hover:text-zinc-400',
+                    })}
                     onClick={() => handleBadgeClick(language)}
                   >
                     {language}
-                  </Badge>
+                  </button>
                 </>
               ) : null}
             </div>

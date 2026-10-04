@@ -4,7 +4,8 @@ export const BASE_URL =
     ? 'http://localhost:3000'
     : 'https://www.techwithshrijal.com'
 
-export const EXPERIENCE_YEARS = 5
+export const CAREER_START_YEAR = 2021
+export const EXPERIENCE_YEARS = new Date().getFullYear() - CAREER_START_YEAR
 
 export const PUBLIC_GMAIL = 'contact@techwithshrijal.com'
 export const OTHER_EMAIL = 'shrijal.acharya@gmail.com'

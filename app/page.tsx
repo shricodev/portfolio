@@ -1,5 +1,4 @@
 import { HeroIntro } from '@/components/hero-intro'
-import { NewsletterForm } from '@/components/newsletter-form'
 import RecentBlogs from '@/components/recent-blogs'
 import RecentProjects from '@/components/recent-projects'
 import { Socials } from '@/components/socials'
@@ -10,15 +9,39 @@ import {
   RECENT_PROJECTS_DEFAULT,
 } from '@/lib/constants'
 import { getBlogPostsCardMeta } from '@/lib/blogs'
-
 import { getProjectsMetadata } from '@/lib/projects'
+
 import type { Metadata } from 'next'
+import { serializeJsonLd } from '@/lib/utils'
+
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Shrijal Acharya',
+  url: BASE_URL,
+  image: new URL('/images/shrijal-acharya.webp', BASE_URL).toString(),
+  jobTitle: 'Developer Advocate and Software Engineer',
+  sameAs: [
+    'https://www.linkedin.com/in/iamshrijal',
+    'https://github.com/shricodev',
+    'https://dev.to/shricodev',
+    'https://x.com/shricodev',
+  ],
+  knowsAbout: [
+    'TypeScript',
+    'Python',
+    'Go',
+    'Cloud computing',
+    'DevOps',
+    'AI agents',
+  ],
+}
 
 export function generateMetadata(): Metadata {
   const baseMetadata = {
     title: 'Shrijal Acharya',
     description:
-      'Explore my collection of GitHub projects, read my blog posts, and stay updated by subscribing to my newsletter for project and blog updates.',
+      'Explore my selected software projects, technical writing, community work, and experience across web development, cloud, DevOps, and AI agents.',
   }
 
   return {
@@ -42,23 +65,24 @@ export default async function Home() {
     page: PAGE_INDEX_DEFAULT,
     pageSize: RECENT_BLOGS_DEFAULT,
   })
-
-  const recentPosts = getProjectsMetadata({
+  const recentProjects = getProjectsMetadata({
     page: PAGE_INDEX_DEFAULT,
     perPage: RECENT_PROJECTS_DEFAULT,
   })
 
   return (
     <>
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(personJsonLd) }}
+      />
       <HeroIntro />
 
       <RecentBlogs blogPosts={blogs} />
 
-      <RecentProjects projectsMeta={recentPosts} />
+      <RecentProjects projectsMeta={recentProjects} />
 
       <Socials />
-
-      <NewsletterForm />
     </>
   )
 }

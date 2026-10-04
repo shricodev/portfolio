@@ -57,9 +57,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} mx-auto flex min-h-screen max-w-3xl flex-col px-4 antialiased`}
       >
+        <a
+          href='#main-content'
+          className='bg-background sr-only z-[100] rounded-md px-4 py-2 font-semibold focus:not-sr-only focus:fixed focus:top-4 focus:left-4'
+        >
+          Skip to main content
+        </a>
         <Providers>
           <Navbar />
-          <main className='mt-40 grow'>{children}</main>
+          <main id='main-content' className='mt-40 grow'>
+            {children}
+          </main>
 
           {/* Toaster for notifications from shadcn/ui sonner */}
           <Toaster />

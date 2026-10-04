@@ -5,7 +5,6 @@ import {
   TwitterIcon,
   DevToIcon,
   LinkedInIcon,
-  RedditIcon,
   RSSIcon,
 } from '@/components/icons'
 import { BASE_URL } from '@/lib/constants'
@@ -31,11 +30,6 @@ const socials = [
     name: 'X',
     href: 'https://x.com/shricodev',
     icon: TwitterIcon,
-  },
-  {
-    name: 'Reddit',
-    href: 'https://www.reddit.com/user/shricodev',
-    icon: RedditIcon,
   },
   {
     name: 'RSS',

@@ -1,5 +1,4 @@
 import { CustomHoverCard } from '@/components/custom-hover-card'
-import { NewsletterForm } from '@/components/newsletter-form'
 import { Separator } from '@/components/ui/separator'
 import { BASE_URL } from '@/lib/constants'
 import type { Metadata } from 'next'
@@ -20,7 +19,7 @@ export default function Page() {
         <h1 className='title'>Work</h1>
 
         <div className='prose max-w-full'>
-          <p className='text-pretty font-medium text-zinc-800 dark:text-zinc-300'>
+          <p className='font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
             I&apos;ve worked across software development, developer advocacy,
             open-source leadership, and technical writing with startups,
             foundations, and global programs. Here&apos;s a summary of my work
@@ -33,7 +32,7 @@ export default function Page() {
         <div className='space-y-14'>
           {/* Composio */}
           <article>
-            <h2 className='mb-2 text-lg font-semibold text-zinc-900 dark:text-foreground'>
+            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
               Composio
             </h2>
             <div className='mb-4 flex items-center gap-2 text-sm'>
@@ -43,7 +42,7 @@ export default function Page() {
               <span className='text-muted-foreground'>·</span>
               <time className='text-muted-foreground'>Feb 2025 - Present</time>
             </div>
-            <div className='text-pretty font-medium leading-relaxed text-zinc-800 dark:text-zinc-300'>
+            <div className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
               <span>At</span>
               <CustomHoverCard
                 triggerText='Composio'
@@ -57,24 +56,20 @@ export default function Page() {
                 I build hands-on AI agent projects and create developer-focused
                 content that helps others learn and ship with AI tooling.
               </span>
-              <ul className='mt-4 list-disc space-y-1 pl-5 text-pretty font-medium text-zinc-900 dark:text-zinc-200'>
-                <li>
-                  Build end-to-end AI agent projects and working demos.
-                </li>
+              <ul className='mt-4 list-disc space-y-1 pl-5 font-medium text-pretty text-zinc-900 dark:text-zinc-200'>
+                <li>Build end-to-end AI agent projects and working demos.</li>
                 <li>
                   Write tutorials, integration guides, and technical
                   walkthroughs.
                 </li>
-                <li>
-                  All content published on the Composio authors page.
-                </li>
+                <li>All content published on the Composio authors page.</li>
               </ul>
             </div>
           </article>
 
           {/* Studio1 */}
           <article>
-            <h2 className='mb-2 text-lg font-semibold text-zinc-900 dark:text-foreground'>
+            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
               Studio1
             </h2>
             <div className='mb-4 flex items-center gap-2 text-sm'>
@@ -84,7 +79,7 @@ export default function Page() {
               <span className='text-muted-foreground'>·</span>
               <time className='text-muted-foreground'>Oct 2024 - Present</time>
             </div>
-            <div className='text-pretty font-medium leading-relaxed text-zinc-800 dark:text-zinc-300'>
+            <div className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
               <span>At</span>
               <CustomHoverCard
                 triggerText='Studio1'
@@ -98,7 +93,7 @@ export default function Page() {
                 I build full-stack and AI-powered applications, and write
                 detailed implementation guides for each project I ship.
               </span>
-              <ul className='mt-4 list-disc space-y-1 pl-5 text-pretty font-medium text-zinc-900 dark:text-zinc-200'>
+              <ul className='mt-4 list-disc space-y-1 pl-5 font-medium text-pretty text-zinc-900 dark:text-zinc-200'>
                 <li>
                   Built an AI chatbot that lets users chat with a Notion
                   database.
@@ -117,7 +112,7 @@ export default function Page() {
 
           {/* freeCodeCamp */}
           <article>
-            <h2 className='mb-2 text-lg font-semibold text-zinc-900 dark:text-foreground'>
+            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
               freeCodeCamp
             </h2>
             <div className='mb-4 flex items-center gap-2 text-sm'>
@@ -127,7 +122,7 @@ export default function Page() {
               <span className='text-muted-foreground'>·</span>
               <time className='text-muted-foreground'>Apr 2024 - Present</time>
             </div>
-            <div className='text-pretty font-medium leading-relaxed text-zinc-800 dark:text-zinc-300'>
+            <div className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
               <span>At</span>
               <CustomHoverCard
                 triggerText='freeCodeCamp'
@@ -141,7 +136,7 @@ export default function Page() {
                 I write in-depth technical articles and tutorials for one of the
                 largest developer communities on the web.
               </span>
-              <ul className='mt-4 list-disc space-y-1 pl-5 text-pretty font-medium text-zinc-900 dark:text-zinc-200'>
+              <ul className='mt-4 list-disc space-y-1 pl-5 font-medium text-pretty text-zinc-900 dark:text-zinc-200'>
                 <li>
                   Cover topics across full-stack development, AI, and DevOps.
                 </li>
@@ -154,7 +149,7 @@ export default function Page() {
 
           {/* Oppia Foundation */}
           <article>
-            <h2 className='mb-2 text-lg font-semibold text-zinc-900 dark:text-foreground'>
+            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
               Oppia Foundation
             </h2>
             <div className='mb-4 flex items-center gap-2 text-sm'>
@@ -164,7 +159,7 @@ export default function Page() {
               <span className='text-muted-foreground'>·</span>
               <time className='text-muted-foreground'>May 2023 - Present</time>
             </div>
-            <div className='text-pretty font-medium leading-relaxed text-zinc-800 dark:text-zinc-300'>
+            <div className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
               <span>At</span>
               <CustomHoverCard
                 triggerText='Oppia Foundation'
@@ -178,7 +173,7 @@ export default function Page() {
                 I lead the Dev Workflow and Welfare team, focused on improving
                 developer experience across the project.
               </span>
-              <ul className='mt-4 list-disc space-y-1 pl-5 text-pretty font-medium text-zinc-900 dark:text-zinc-200'>
+              <ul className='mt-4 list-disc space-y-1 pl-5 font-medium text-pretty text-zinc-900 dark:text-zinc-200'>
                 <li>
                   Contribute code to the LaCE team, building and maintaining
                   onboarding for new contributors.
@@ -193,7 +188,7 @@ export default function Page() {
 
           {/* Microsoft */}
           <article>
-            <h2 className='mb-2 text-lg font-semibold text-zinc-900 dark:text-foreground'>
+            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
               Microsoft
             </h2>
             <div className='mb-4 flex items-center gap-2 text-sm'>
@@ -203,7 +198,7 @@ export default function Page() {
               <span className='text-muted-foreground'>·</span>
               <time className='text-muted-foreground'>Apr 2024 - Present</time>
             </div>
-            <div className='text-pretty font-medium leading-relaxed text-zinc-800 dark:text-zinc-300'>
+            <div className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
               <span>As a</span>
               <CustomHoverCard
                 triggerText='Microsoft'
@@ -217,9 +212,11 @@ export default function Page() {
                 Learn Student Ambassador, I help students learn new technologies
                 and build with the developer community.
               </span>
-              <ul className='mt-4 list-disc space-y-1 pl-5 text-pretty font-medium text-zinc-900 dark:text-zinc-200'>
+              <ul className='mt-4 list-disc space-y-1 pl-5 font-medium text-pretty text-zinc-900 dark:text-zinc-200'>
                 <li>Run workshops and mentor students.</li>
-                <li>Build projects and share Microsoft tools with the community.</li>
+                <li>
+                  Build projects and share Microsoft tools with the community.
+                </li>
                 <li>Promoted to Gold tier in August 2025.</li>
               </ul>
             </div>
@@ -227,7 +224,7 @@ export default function Page() {
 
           {/* GirlScript Summer of Code */}
           <article>
-            <h2 className='mb-2 text-lg font-semibold text-zinc-900 dark:text-foreground'>
+            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
               GirlScript Summer of Code
             </h2>
             <div className='mb-4 flex items-center gap-2 text-sm'>
@@ -235,18 +232,15 @@ export default function Page() {
                 Individual Contributor
               </span>
               <span className='text-muted-foreground'>·</span>
-              <time className='text-muted-foreground'>
-                May 2024 - Jul 2024
-              </time>
+              <time className='text-muted-foreground'>May 2024 - Jul 2024</time>
             </div>
-            <p className='text-pretty font-medium leading-relaxed text-zinc-800 dark:text-zinc-300'>
+            <p className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
               Contributed to open-source projects during this three-month
               program, working under mentor guidance on real-world codebases.
             </p>
           </article>
         </div>
       </section>
-      <NewsletterForm />
     </>
   )
 }

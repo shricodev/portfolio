@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils'
 import {
   GitHubIcon,
   LinkedInIcon,
-  RedditIcon,
   GmailIcon,
 } from '@/components/icons'
 import { InfoTooltip } from '@/components/info-tooltip'
@@ -23,12 +22,6 @@ const CONNECT_LINKS = [
     label: 'LinkedIn',
     href: 'https://www.linkedin.com/in/iamshrijal',
     icon: LinkedInIcon,
-    external: true,
-  },
-  {
-    label: 'Reddit',
-    href: 'https://www.reddit.com/user/shricodev',
-    icon: RedditIcon,
     external: true,
   },
   {
