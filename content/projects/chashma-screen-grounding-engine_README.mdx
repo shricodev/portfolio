@@ -1,0 +1,289 @@
+---
+title: "chashma-screen-grounding-engine"
+description: "Screen grounding engine: screenshot + instruction gives the exact point to click. Qwen3-VL-2B fine-tuned on self-labeled web data, runs on a laptop GPU."
+clone_url: "https://github.com/shricodev/chashma-screen-grounding-engine.git"
+language: "Python"
+homepage: "https://huggingface.co/shricodev/chashmish-babubhaiya"
+topics:
+  - "computer-use"
+  - "gui-grounding"
+  - "lora"
+  - "playwright"
+  - "qwen3-vl"
+  - "showcase"
+  - "vision-language-model"
+  - "web-agents"
+created_at: "2026-11-10T09:14:54Z"
+updated_at: "2026-11-10T09:18:11Z"
+---
+
+<p align="center">
+  <img src="docs/assets/chashma.jpg" width="520" alt="Pencil sketch of thick round glasses with a click target in one lens">
+</p>
+
+<h1 align="center">chashma</h1>
+
+<p align="center">
+  <b>A screen grounding engine that runs on a laptop GPU.</b><br>
+  Screenshot + <i>"open the pricing page"</i> → the exact point to click.
+</p>
+
+<p align="center">
+  <a href="https://github.com/shricodev/chashma-screen-grounding-engine/actions/workflows/ci.yml"><img src="https://github.com/shricodev/chashma-screen-grounding-engine/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://huggingface.co/shricodev/chashmish-babubhaiya"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20model-chashmish--babubhaiya-ffcc4d" alt="Hugging Face model"></a>
+  <img src="https://img.shields.io/badge/python-3.12-3776ab" alt="Python 3.12">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f" alt="MIT license"></a>
+</p>
+
+<p align="center">
+  <img src="docs/assets/agent-demo.gif" width="760" alt="Browser agent opening the asyncio docs: a planner says what to do, chashma finds where to click">
+  <br><sub>The browser agent: Claude plans each step in words, chashma finds where to click, locally.</sub>
+</p>
+
+Computer-use agents spend most of their budget on one question, *where on this screen is
+the thing I want?*, and usually answer it by sending every screenshot to a frontier
+model. chashma is [Qwen3-VL-2B](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct)
+fine-tuned for just that question on 60k examples from real websites that label
+themselves. It runs locally in ~5 GB of VRAM and was trained on one free Kaggle T4.
+
+The weights are on Hugging Face as
+[`shricodev/chashmish-babubhaiya`](https://huggingface.co/shricodev/chashmish-babubhaiya).
+This repo is everything around them: the crawler that builds the data, training, evaluation,
+an HTTP API, Docker, and a browser agent. The Python package and CLI are called `pinpoint`.
+
+```bash
+pinpoint predict mailchimp.png "call the Mailchimp sales phone number" --save out.png
+# click at (949, 75)  raw='(741, 93)'  1481ms      <- lands on "Sales: +1 (...)" in the header
+```
+
+<p align="center">
+  <img src="docs/assets/demo-click.png" width="760" alt="Predicted click drawn on the Mailchimp homepage, on the sales phone number">
+</p>
+
+## Results
+
+Click accuracy = the predicted point lands inside the target element's box. The test split
+is 300 questions on websites (domains) never seen in training.
+
+| model | own test (unseen sites) | ScreenSpot web | p50 latency | runs |
+| --- | --- | --- | --- | --- |
+| Qwen3-VL-2B (base) | 78.0% | 81.9% | 613 ms | local, RTX 3060 |
+| **chashma (Qwen3-VL-2B + LoRA)** | **84.7%** | 82.6% | 613 ms | local, RTX 3060 |
+| Claude Haiku 5.5 | 90.7% | 93.1% | 1680 ms | API |
+
+<p align="center">
+  <img src="docs/assets/results.png" width="720" alt="Click accuracy by slice for the base model, chashma and Claude Haiku">
+</p>
+
+| slice (own test) | n | base | chashma | Haiku |
+| --- | --- | --- | --- | --- |
+| mobile viewport | 60 | 46.7% | **66.7%** | 75.0% |
+| direct ("click Sign in") | 29 | 75.9% | **96.6%** | 100% |
+| dark theme | 106 | 73.6% | **83.0%** | 90.6% |
+| icons | 43 | 72.1% | **76.7%** | 90.7% |
+| functional ("log into my account") | 35 | 60.0% | 68.6% | 94.3% |
+
+On unseen websites from the same kind of crawl, fine-tuning closes about half the gap
+between the base model and a frontier API model, at the same speed. On ScreenSpot, a
+different benchmark built from other sites with its own labeling, it holds level (+0.7,
+within noise for n=436): better on dev tools (68.3% → 79.1%), worse on forums
+(85.4% → 77.5%). The data makes the model better at the web it was trained on without
+making it a better general pointer, and the weakest spot is clear: instructions that
+describe a *goal* rather than the thing on screen need more reasoning than a 2B model
+brings.
+
+## How it works
+
+<p align="center">
+  <img src="docs/assets/architecture.png" width="860" alt="Architecture: crawl and label, train with LoRA on Kaggle, serve via CLI, API, Docker and a browser agent">
+</p>
+
+### 1. Data that labels itself
+
+The browser already knows where every button is. The crawler renders real sites with
+Playwright and runs [`extract.js`](src/pinpoint/data/extract.js) in the page to pull every
+interactive element with its exact bounding box.
+
+<p align="center">
+  <img src="docs/assets/dom-labels.png" width="720" alt="Every clickable element on a page, boxed straight from the DOM; blue are icons">
+  <br><sub>Labels straight from the DOM, no human in the loop. Blue boxes are icons.</sub>
+</p>
+
+The hard part is throwing away boxes that would be wrong labels:
+
+| problem | fix |
+| --- | --- |
+| hidden / `display:none` / `aria-hidden` elements | computed-style walk up the tree |
+| elements covered by cookie banners, modals, sticky headers | `elementFromPoint` probes at 5 points, must be on top at the center + majority |
+| carousels and animations moving between extraction and screenshot | extract **before and after** the screenshot, keep only elements that didn't move |
+| `<a><button>` nesting producing duplicate targets | IoU-based dedupe |
+| full-page click handlers | drop anything bigger than half the viewport |
+
+Seeds come from the [Tranco](https://tranco-list.eu) top sites
+([`scripts/make_seeds.py`](scripts/make_seeds.py)), filtered for adult and infrastructure
+domains, one site per brand. Each page is captured in a sample of variants (desktop /
+laptop / mobile, light / dark, top / scrolled).
+
+Current dataset: 3,442 screenshots from 1,373 domains, 67,884 questions (10k on icons).
+
+### 2. Instructions: free templates plus an LLM
+
+Boxes alone aren't enough; the model has to learn how people *ask* for things.
+
+- **templates** ("click Pricing", "open the search field") are free and come straight from
+  the element's text, aria-label or placeholder, only when that label is unique on the page.
+- **LLM instructions** ([`annotate.py`](src/pinpoint/data/annotate.py)): numbered marks are
+  drawn on ~8 non-overlapping targets and a vision LLM writes three styles per mark in one
+  call per page: *direct* ("click Sign in"), *functional* ("log into my account") and
+  *visual* ("the magnifying glass at the top right"). Instructions that mention the
+  overlay ("click box 3") are dropped, since there are no marks at inference time.
+
+### 3. A split that doesn't cheat
+
+A site's header and nav repeat on every page, so a random split leaks test targets into
+training. Splits are assigned **per domain**, and near-identical captures (e.g. a "dark"
+variant of a site without dark mode) are dropped with a perceptual hash.
+
+### 4. Training
+
+- **Answer format**: Qwen's native `(x, y)` on a 0..1000 grid, so the model fine-tunes the
+  pointing it already knows instead of learning a new syntax.
+- **Packing**: up to 16 questions about one screenshot go in one multi-turn sequence, so the
+  ~1000 image tokens are encoded once instead of 16 times. A group never asks about the same
+  element twice (otherwise later turns copy earlier answers), and is capped at 800 text
+  tokens (non-Latin pages tokenize long and used to run the T4 out of memory).
+- **Loss** on the answer tokens only.
+- **LoRA** r=16 on the language model's attention and MLP (17M trainable parameters).
+- **Checkpoint selection by click accuracy**, measured by generating on held-out sites
+  during training. Eval loss bottoms out early, while the model still guesses common
+  positions without looking at the image.
+
+<p align="center">
+  <img src="docs/assets/training-curve.png" width="640" alt="Validation click accuracy rising from 81% to 90% over 500 training steps">
+</p>
+
+Laptops thermal-throttle on multi-hour runs (the 3060 dropped to 210 MHz at 89 °C), so
+[`scripts/kaggle_train.sh`](scripts/kaggle_train.sh) ships the dataset and a wheel to a free
+Kaggle T4, waits for that exact dataset version, and pulls the checkpoint back. One epoch
+takes ~5 h.
+
+The released model is step 500 of 773. Validation click accuracy plateaus around step 300,
+and the full epoch tied it on the test split (84.7%) while scoring slightly lower on
+ScreenSpot web (81.9% vs 82.6%), so the earlier checkpoint stays.
+
+#### What didn't work
+
+The first version fine-tuned SmolVLM-256M. Packing, more data and better checkpoint
+selection all helped the loss, but click accuracy stayed at 5-7%: a model with no
+localization pretraining learned to guess where buttons usually are, not to look. A
+real-vs-blank-image loss check (0.831 vs 0.827) made that visible. Starting from a model
+that already points (Qwen3-VL, 78% zero-shot) and teaching it this domain worked on the
+first full run.
+
+### 5. Evaluation
+
+The same harness scores local checkpoints and API baselines (`anthropic:...`,
+`openai:...`) on the held-out test split, broken down by instruction style, icon vs text,
+viewport and theme, and on
+[ScreenSpot](https://huggingface.co/datasets/rootsautomation/ScreenSpot) web.
+
+### 6. The agent: plan in words, click with chashma
+
+[`agent/browser.py`](src/pinpoint/agent/browser.py) splits a browser agent in two. The
+planner LLM sees a downscaled screenshot and only decides *what* to do next, in words
+("type asyncio into the quick search field"). chashma decides *where*. The planner never
+emits coordinates, so it works from cheap low-res images, and the precise part runs
+locally. Every run saves per-step screenshots with the click drawn on them, a
+`trajectory.json` and a GIF (like the one at the top).
+
+```bash
+pinpoint agent "open the documentation page for the asyncio module" \
+  --url https://docs.python.org/3/ --headed
+```
+
+`--grounder` also takes `http://localhost:8000` (a running `pinpoint serve`) or
+`anthropic:<model>` to compare against a frontier model doing both jobs.
+
+## Usage
+
+```bash
+git clone https://github.com/shricodev/chashma-screen-grounding-engine
+cd chashma-screen-grounding-engine
+uv sync --all-extras
+uv run playwright install chromium
+```
+
+Just use the model (downloads [`shricodev/chashmish-babubhaiya`](https://huggingface.co/shricodev/chashmish-babubhaiya) on first run):
+
+```bash
+uv run pinpoint predict shot.png "open the pricing page" --save out.png
+uv run pinpoint serve
+curl -F image=@shot.png -F instruction="open settings" localhost:8000/v1/ground
+```
+
+Build the data, train and evaluate your own:
+
+```bash
+echo "ANTHROPIC_API_KEY=..." > .env    # only for LLM instructions, baselines and the agent planner
+
+uv run python scripts/make_seeds.py --top 3000    # -> data/seeds_tranco.txt
+pinpoint crawl --seeds data/seeds_tranco.txt      # screenshots + boxes -> data/captures
+pinpoint annotate --model anthropic:claude-haiku-5-5   # optional, costs API calls
+pinpoint build                                    # -> data/dataset/{train,val,test}.jsonl
+
+pinpoint train                                    # configs/train_qwen3vl_2b.yaml
+# or on a free Kaggle T4 (KAGGLE_TOKEN in .env):
+scripts/kaggle_train.sh push && scripts/kaggle_train.sh watch
+
+pinpoint eval --split test --limit 300
+pinpoint eval --dataset screenspot --platform web
+pinpoint eval --model anthropic:claude-haiku-5-5 --split test --limit 300   # baseline
+```
+
+Every command takes `--model`. Without it, a local `checkpoints/pinpoint-qwen3vl-2b` is used
+if you trained one, otherwise the Hugging Face model.
+
+### Docker (GPU)
+
+```bash
+docker build -t pinpoint .
+docker run --gpus all -p 8000:8000 \
+  -e PINPOINT_MODEL=shricodev/chashmish-babubhaiya \
+  -v ~/.cache/huggingface:/root/.cache/huggingface pinpoint
+curl localhost:8000/health
+```
+
+To serve your own checkpoint instead, export it with
+`pinpoint publish --repo you/your-model` and mount `dist/hf/your-model` at
+`/models/pinpoint` (the default `PINPOINT_MODEL`).
+
+`--gpus all` needs the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
+Without it the same image runs on CPU (~9 GB RAM, ~20 s per click).
+
+## Layout
+
+```
+src/pinpoint/
+  data/      extract.js, crawler, set-of-marks, annotation, templates, dataset build
+  model/     answer format, local VLM / API / HTTP grounders
+  train/     SFT with image packing (full or LoRA)
+  eval/      click-accuracy harness, ScreenSpot loader
+  serve/     FastAPI app
+  agent/     planner + grounder browser agent
+scripts/     Tranco seeds, Kaggle training
+```
+
+## Roadmap
+
+- [ ] more LLM-written functional instructions (the weakest slice)
+- [ ] crop/zoom augmentation for small targets
+- [ ] agent benchmark: task success and cost, chashma vs frontier grounding
+- [ ] int8 / GGUF export for CPU inference
+- [ ] RL fine-tuning with a "click landed in box" reward
+
+## License
+
+Code: [MIT](LICENSE). Model weights: Apache-2.0, same as the
+[Qwen3-VL-2B](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct) base model. Screenshots in
+`docs/assets/` are of public pages and only illustrate the results; the training data is not
+redistributed.
