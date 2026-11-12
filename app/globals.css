@@ -25,98 +25,95 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
-  --color-chart-1: hsl(var(--chart-1));
-  --color-chart-2: hsl(var(--chart-2));
-  --color-chart-3: hsl(var(--chart-3));
-  --color-chart-4: hsl(var(--chart-4));
-  --color-chart-5: hsl(var(--chart-5));
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 }
 
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
 :root {
   --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
+  --foreground: 0 0% 9%;
+  --card: 0 0% 98%;
+  --card-foreground: 0 0% 9%;
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 240 5.9% 10%;
+  --popover-foreground: 0 0% 9%;
+  --primary: 0 0% 9%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  --destructive: 0 84.2% 60.2%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 72% 45%;
   --destructive-foreground: 0 0% 98%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 240 10% 3.9%;
-  --chart-1: 12 76% 61%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 24%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 27 87% 67%;
+  --border: 0 0% 90%;
+  --input: 0 0% 85%;
+  --ring: 0 0% 9%;
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
+  --background: 0 0% 4%;
+  --foreground: 0 0% 96%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 96%;
+  --popover: 0 0% 6%;
+  --popover-foreground: 0 0% 96%;
+  --primary: 0 0% 96%;
+  --primary-foreground: 0 0% 6%;
+  --secondary: 0 0% 12%;
+  --secondary-foreground: 0 0% 96%;
+  --muted: 0 0% 11%;
+  --muted-foreground: 0 0% 63%;
+  --accent: 0 0% 12%;
+  --accent-foreground: 0 0% 96%;
+  --destructive: 0 75% 62%;
   --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  --border: 0 0% 15%;
+  --input: 0 0% 20%;
+  --ring: 0 0% 80%;
 }
 
 [data-rmiz-modal-overlay='visible'] {
-  background-color: rgba(255, 255, 255, 0.92);
+  background-color: rgba(255, 255, 255, 0.94);
 }
 .dark [data-rmiz-modal-overlay='visible'] {
-  background-color: rgba(9, 9, 11, 0.94);
+  background-color: rgba(10, 10, 10, 0.95);
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+  /* one focus style for everything */
+  :focus-visible {
+    @apply outline-ring outline-2 outline-offset-2;
   }
 
   .title {
-    @apply mb-10 text-balance text-3xl font-bold text-foreground underline decoration-border/75 decoration-2 underline-offset-8;
+    @apply text-foreground text-3xl font-semibold tracking-tight text-balance;
   }
-
-  span.divider {
-    @apply text-muted-foreground;
+  .lede {
+    @apply text-muted-foreground mt-3 max-w-2xl leading-7;
+  }
+  .eyebrow {
+    @apply text-muted-foreground font-mono text-xs tracking-wider uppercase;
   }
 }
 
@@ -125,14 +122,60 @@
  * base regardless of selector specificity. Unlayered styles win against any layer. */
 
 .prose {
-  --tw-prose-pre-bg: hsl(var(--muted));
+  --tw-prose-body: hsl(var(--foreground) / 0.86);
+  --tw-prose-headings: hsl(var(--foreground));
+  --tw-prose-lead: hsl(var(--muted-foreground));
+  --tw-prose-links: hsl(var(--foreground));
+  --tw-prose-bold: hsl(var(--foreground));
+  --tw-prose-counters: hsl(var(--muted-foreground));
+  --tw-prose-bullets: hsl(var(--muted-foreground) / 0.6);
+  --tw-prose-hr: hsl(var(--border));
+  --tw-prose-quotes: hsl(var(--foreground));
+  --tw-prose-quote-borders: hsl(var(--border));
+  --tw-prose-captions: hsl(var(--muted-foreground));
+  --tw-prose-code: hsl(var(--foreground));
+  --tw-prose-pre-bg: hsl(var(--card));
   --tw-prose-pre-code: hsl(var(--foreground));
-  --tw-prose-invert-pre-bg: hsl(var(--muted));
-  --tw-prose-invert-pre-code: hsl(var(--foreground));
+  --tw-prose-th-borders: hsl(var(--border));
+  --tw-prose-td-borders: hsl(var(--border));
+  line-height: 1.75;
+  overflow-wrap: break-word;
 }
 
-.prose :is(h2, h3, h4)[id] {
-  scroll-margin-top: 8rem;
+.prose :is(h1, h2, h3, h4, h5, h6) {
+  @apply font-semibold tracking-tight;
+  scroll-margin-top: 5.5rem;
+}
+.prose h2 {
+  @apply border-border mt-12 border-b pb-2;
+}
+.prose a {
+  @apply decoration-muted-foreground/60 hover:decoration-foreground font-medium;
+}
+.prose blockquote {
+  @apply font-normal not-italic;
+}
+.prose blockquote p::before,
+.prose blockquote p::after {
+  content: none;
+}
+.prose table {
+  @apply text-sm;
+}
+.prose th {
+  @apply whitespace-nowrap;
+}
+.prose kbd {
+  @apply border-border bg-muted rounded border px-1.5 py-0.5 font-mono text-xs shadow-none;
+}
+.prose details {
+  @apply border-border my-4 rounded-md border px-4 py-2;
+}
+.prose summary {
+  @apply cursor-pointer font-medium;
+}
+.prose iframe {
+  @apply max-w-full;
 }
 
 .scrollbar-none {
@@ -144,12 +187,12 @@
 }
 
 .prose pre {
-  @apply overflow-x-auto rounded-lg border border-border px-5 py-4 text-sm;
+  @apply border-border overflow-x-auto rounded-lg border px-4 py-3.5 text-[13px];
 }
 .prose pre code {
   @apply bg-transparent p-0;
   display: grid;
-  line-height: 1.75;
+  line-height: 1.7;
   counter-reset: line;
 }
 .prose pre code > [data-line] {

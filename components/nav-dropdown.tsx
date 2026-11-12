@@ -6,47 +6,49 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { HamburgerMenuIcon } from '@/components/icons'
+import { buttonVariants } from '@/components/ui/button'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { NAV_LINKS } from '@/lib/constants'
 import { cn, isActiveNavPath } from '@/lib/utils'
-import { useActivePathname } from '@/hooks/use-active-pathname'
 
 export function NavDropdown() {
-  const [isOpen, setIsOpen] = useState<boolean>(false)
-  const pathName = useActivePathname()
+  const [isOpen, setIsOpen] = useState(false)
+  const pathname = usePathname()
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger
         aria-label='Open navigation menu'
-        className='flex-shrink-0'
+        className={buttonVariants({ variant: 'ghost', size: 'icon' })}
       >
-        <HamburgerMenuIcon aria-hidden='true' className='size-6 font-bold' />
+        <HamburgerMenuIcon aria-hidden='true' className='size-5' />
       </PopoverTrigger>
 
-      <PopoverContent
-        className='w-48 p-2'
-        align='end'
-        onBlur={() => setIsOpen(false)}
-      >
-        <div className='flex flex-col space-y-1'>
-          {NAV_LINKS.map(link => (
-            <Link
-              key={link.name}
-              href={link.path}
-              onClick={() => setIsOpen(false)}
-              className={cn(
-                'block rounded px-4 py-2 text-sm font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800',
-                isActiveNavPath(pathName, link.path)
-                  ? 'text-foreground'
-                  : 'text-muted-foreground',
-              )}
-            >
-              {link.name}
-            </Link>
-          ))}
-        </div>
+      <PopoverContent className='w-44 p-1.5' align='end'>
+        <ul className='flex flex-col'>
+          {NAV_LINKS.map(link => {
+            const active = isActiveNavPath(pathname, link.path)
+            return (
+              <li key={link.path}>
+                <Link
+                  href={link.path}
+                  onClick={() => setIsOpen(false)}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'hover:bg-accent block rounded-md px-3 py-2 text-sm',
+                    active
+                      ? 'text-foreground font-medium'
+                      : 'text-muted-foreground',
+                  )}
+                >
+                  {link.name}
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
       </PopoverContent>
     </Popover>
   )

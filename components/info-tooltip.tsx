@@ -3,35 +3,23 @@
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { TOOLTIP_DELAY_DURATION } from '@/lib/constants'
-import { cn } from '@/lib/utils'
-import { HTMLAttributes } from 'react'
 
-interface InfoTooltipProps extends HTMLAttributes<HTMLDivElement> {
+interface InfoTooltipProps {
   children: React.ReactNode
   label: string
   side?: 'left' | 'top' | 'right' | 'bottom'
-  align?: 'start' | 'center' | 'end'
 }
 
-export const InfoTooltip = ({
-  label,
-  side,
-  align,
-  children,
-  className,
-}: InfoTooltipProps) => {
+// TooltipProvider lives once in providers.tsx
+export const InfoTooltip = ({ label, side, children }: InfoTooltipProps) => {
   return (
-    <TooltipProvider>
-      <Tooltip delayDuration={TOOLTIP_DELAY_DURATION}>
-        <TooltipTrigger asChild>{children}</TooltipTrigger>
-        <TooltipContent side={side} align={align}>
-          <p className={cn('text-sm font-semibold', className)}>{label}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side={side}>
+        <p className='text-xs font-medium'>{label}</p>
+      </TooltipContent>
+    </Tooltip>
   )
 }

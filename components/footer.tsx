@@ -1,75 +1,39 @@
-'use client'
+import Link from 'next/link'
+import { SOCIAL_LINKS } from '@/lib/constants'
 
-import {
-  GitHubIcon,
-  TwitterIcon,
-  DevToIcon,
-  LinkedInIcon,
-  RSSIcon,
-} from '@/components/icons'
-import { BASE_URL } from '@/lib/constants'
-import { InfoTooltip } from '@/components/info-tooltip'
-
-const socials = [
-  {
-    name: 'LinkedIn',
-    href: 'https://www.linkedin.com/in/iamshrijal',
-    icon: LinkedInIcon,
-  },
-  {
-    name: 'GitHub',
-    href: 'https://github.com/shricodev',
-    icon: GitHubIcon,
-  },
-  {
-    name: 'DEV.to',
-    href: 'https://dev.to/shricodev',
-    icon: DevToIcon,
-  },
-  {
-    name: 'X',
-    href: 'https://x.com/shricodev',
-    icon: TwitterIcon,
-  },
-  {
-    name: 'RSS',
-    href: BASE_URL + '/rss.xml',
-    icon: RSSIcon,
-  },
-]
+const year = new Date().getFullYear()
 
 export const Footer = () => {
   return (
-    <footer className='pb-10 pt-16'>
-      <div className='md:flex md:items-center md:justify-between'>
-        <div className='flex justify-center space-x-6 md:order-2'>
-          {socials.map(social => (
-            <InfoTooltip
-              key={social.name}
-              label={social.name}
-              side='top'
-              className='text-xs'
+    <footer className='border-border/60 text-muted-foreground mt-24 flex flex-col gap-4 border-t py-8 text-sm sm:flex-row sm:items-center sm:justify-between'>
+      <p>&copy; {year} Shrijal Acharya</p>
+      <ul className='flex flex-wrap gap-x-5 gap-y-2'>
+        {SOCIAL_LINKS.filter(link => link.footer).map(link => (
+          <li key={link.name}>
+            <a
+              href={link.href}
+              target='_blank'
+              rel='noreferrer noopener'
+              className='hover:text-foreground transition-colors'
             >
-              <a
-                key={social.name}
-                href={social.href}
-                target='_blank'
-                rel='noreferrer noopener'
-                className='text-muted-foreground hover:text-foreground'
-              >
-                <span className='sr-only'>{social.name}</span>
-                <social.icon className='size-5' />
-              </a>
-            </InfoTooltip>
-          ))}
-        </div>
-        <div className='mt-8 md:order-1 md:mt-0'>
-          <p className='text-center text-base leading-5 text-muted-foreground'>
-            &copy; {new Date().getFullYear()} Shrijal Acharya. All rights
-            reserved.
-          </p>
-        </div>
-      </div>
+              {link.name}
+            </a>
+          </li>
+        ))}
+        <li>
+          <a href='/rss.xml' className='hover:text-foreground transition-colors'>
+            RSS
+          </a>
+        </li>
+        <li>
+          <Link
+            href='/privacy'
+            className='hover:text-foreground transition-colors'
+          >
+            Privacy
+          </Link>
+        </li>
+      </ul>
     </footer>
   )
 }

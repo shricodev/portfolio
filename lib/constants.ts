@@ -4,32 +4,31 @@ export const BASE_URL =
     ? 'http://localhost:3000'
     : 'https://www.techwithshrijal.com'
 
+export const SITE_DESCRIPTION =
+  'Shrijal Acharya is a developer advocate and software engineer building AI agent projects, developer tools, and technical content.'
+
 export const CAREER_START_YEAR = 2021
-export const EXPERIENCE_YEARS = new Date().getFullYear() - CAREER_START_YEAR
 
 export const PUBLIC_GMAIL = 'contact@techwithshrijal.com'
 export const OTHER_EMAIL = 'shrijal.acharya@gmail.com'
 
-export const TOOLTIP_DELAY_DURATION = 150
+export const GITHUB_USERNAME = 'shricodev'
+export const GITHUB_URL = `https://github.com/${GITHUB_USERNAME}`
+export const CAL_LINK = 'shrijal-acharya/30min'
 
 export const SEARCH_QUERY_PARAM = 'q'
 export const SOURCE_QUERY_PARAM = 'source'
+export const SORT_QUERY_PARAM = 'sort'
+export const LANGUAGE_QUERY_PARAM = 'lang'
 
 export const BLOG_SOURCE_OPTIONS = ['all', 'devto', 'freecodecamp'] as const
 export type BlogSourceFilter = (typeof BLOG_SOURCE_OPTIONS)[number]
 
-export const PROJECTS_BATCH_SIZE = 6
-export const BLOGS_BATCH_SIZE = 6
-export const RECENT_BLOGS_DEFAULT = 4
-export const RECENT_PROJECTS_DEFAULT = 5
-export const PAGE_INDEX_DEFAULT = 1
-export const WORDS_PER_MINUTE_DEFAULT = 250
-export const STARS_COUNT_TO_SHOW_ICON = 7
+export const LIST_BATCH_SIZE = 12
 export const DEFAULT_THEME = 'dark'
 
-export const DEBOUNCE_TIME_DEFAULT = 250
-export const DEBOUNCE_TIME_PROJECTS = 250
-export const DEBOUNCE_TIME_BLOGS = 300
+// Blog stats that can't be computed from the feeds, update by hand.
+export const BLOG_VIEWS_LABEL = '1.1M+'
 
 export const DEVTO_USERNAME = 'shricodev'
 export const DEVTO_API_BASE = 'https://dev.to/api'
@@ -44,6 +43,17 @@ export const BLOG_SOURCE_PREFIX_SEPARATOR = '--'
 
 export const PROJECT_FILTER_TOPIC = 'showcase'
 
+// Hand-picked, in display order. Repo names must match GitHub exactly.
+// Anything not here still shows up under "Recent" and in the full list.
+export const FEATURED_PROJECTS = [
+  'gophercast',
+  'chashma-screen-grounding-engine',
+  'kron-k8s-agent',
+  'durable-agent-in-the-loop',
+  'chat-nextjs-mcp-client',
+  'dotfiles',
+]
+
 export const ROUTES = [
   '',
   '/blogs',
@@ -57,9 +67,28 @@ export const ROUTES = [
 
 export const NAV_LINKS = [
   { name: 'Home', path: '/' },
-  { name: 'Blogs', path: '/blogs' },
   { name: 'Projects', path: '/projects' },
+  { name: 'Blogs', path: '/blogs' },
   { name: 'Work', path: '/work' },
   { name: 'Events', path: '/events' },
   { name: 'Contact', path: '/contact' },
+]
+
+export const SOCIAL_LINKS = [
+  { name: 'GitHub', href: GITHUB_URL, footer: true },
+  { name: 'LinkedIn', href: 'https://www.linkedin.com/in/iamshrijal', footer: true },
+  { name: 'X', href: 'https://x.com/shricodev', footer: true },
+  { name: 'DEV', href: 'https://dev.to/shricodev', footer: true },
+  {
+    name: 'freeCodeCamp',
+    href: 'https://www.freecodecamp.org/news/author/shricodev/',
+    footer: false,
+  },
+  { name: 'Hashnode', href: 'https://shricodev.hashnode.dev', footer: false },
+  { name: 'LeetCode', href: 'https://leetcode.com/shricodev', footer: false },
+  {
+    name: 'Discord',
+    href: 'https://discord.com/users/1082700727220183151',
+    footer: false,
+  },
 ]
