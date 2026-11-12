@@ -24,30 +24,50 @@ jobs:
           set -euo pipefail
           mkdir -p "$TARGET_FOLDER"
 
-          repos=$(gh api --method GET --paginate --slurp \
+          work_dir=$(mktemp -d)
+          trap 'rm -rf "$work_dir"' EXIT
+
+          # one paginated call has every field we need, no per-repo metadata call
+          gh api --method GET --paginate --slurp \
             -H 'Accept: application/vnd.github+json' \
             "/users/$TARGET_USER/repos?per_page=100" \
-            | jq -r '.[][] | select(.private == false and .fork == false and (.topics | index("showcase") != null)) | .name' \
-            | sort -u)
+            | jq -c '[.[][] | select(.private == false and .fork == false and ((.topics // []) | index("showcase") != null))] | sort_by(.name)' \
+            > "$work_dir/repos.json"
 
-          expected_files=$(mktemp)
-          trap 'rm -f "$expected_files"' EXIT
+          repo_count=$(jq 'length' "$work_dir/repos.json")
+          if [[ "$repo_count" -eq 0 ]]; then
+            echo "::warning::No showcase repos returned, leaving content untouched."
+            exit 0
+          fi
 
-          for repo in $repos; do
+          # compare everything except the updated_at line, it moves on every push
+          strip_volatile() {
+            sed '0,/^updated_at: /{/^updated_at: /d}' "$1"
+          }
+
+          expected_files="$work_dir/expected"
+          : > "$expected_files"
+
+          for i in $(seq 0 $((repo_count - 1))); do
+            repo_metadata=$(jq -c ".[$i]" "$work_dir/repos.json")
+            repo=$(jq -r '.name' <<< "$repo_metadata")
             readme_file="$TARGET_FOLDER/${repo}_README.mdx"
             printf '%s\n' "$readme_file" >> "$expected_files"
 
-            repo_metadata=$(gh api -H 'Accept: application/vnd.github+json' \
-              "/repos/$TARGET_USER/$repo")
-            if ! readme_content=$(gh api \
-              -H 'Accept: application/vnd.github.raw+json' \
-              "/repos/$TARGET_USER/$repo/readme"); then
-              echo "No README found for $repo, skipping..."
-              rm -f "$readme_file"
+            if ! gh api -H 'Accept: application/vnd.github.raw+json' \
+              "/repos/$TARGET_USER/$repo/readme" \
+              > "$work_dir/readme" 2> "$work_dir/readme_err"; then
+              if grep -q 'HTTP 404' "$work_dir/readme_err"; then
+                echo "No README for $repo, removing it."
+                rm -f "$readme_file"
+              else
+                # flaky API, keep whatever we already have
+                echo "::warning::README fetch failed for $repo, keeping existing copy."
+              fi
               continue
             fi
 
-            temp_file=$(mktemp "$TARGET_FOLDER/.${repo}.XXXXXX")
+            temp_file="$work_dir/next"
             {
               echo '---'
               echo "title: $(jq -r '.name | @json' <<< "$repo_metadata")"
@@ -56,19 +76,28 @@ jobs:
               echo "language: $(jq -r '(.language // "") | @json' <<< "$repo_metadata")"
               echo "homepage: $(jq -r '(.homepage // "") | @json' <<< "$repo_metadata")"
               echo 'topics:'
-              jq -r '.topics[] | "  - " + @json' <<< "$repo_metadata"
+              jq -r '(.topics // []) | sort | .[] | "  - " + @json' <<< "$repo_metadata"
               echo "created_at: $(jq -r '.created_at | @json' <<< "$repo_metadata")"
               echo "updated_at: $(jq -r '.updated_at | @json' <<< "$repo_metadata")"
               echo '---'
               echo
-              printf '%s\n' "$readme_content"
+              # $(...) trims trailing newlines so reruns are stable
+              printf '%s\n' "$(cat "$work_dir/readme")"
             } > "$temp_file"
-            mv "$temp_file" "$readme_file"
+
+            if [[ -f "$readme_file" ]] \
+              && cmp -s <(strip_volatile "$temp_file") <(strip_volatile "$readme_file"); then
+              continue
+            fi
+
+            echo "Updating $repo"
+            cp "$temp_file" "$readme_file"
           done
 
           find "$TARGET_FOLDER" -maxdepth 1 -type f -name '*_README.mdx' -print0 \
             | while IFS= read -r -d '' existing_file; do
                 if ! grep -Fxq "$existing_file" "$expected_files"; then
+                  echo "Removing $existing_file (repo gone or no longer showcased)"
                   rm -f "$existing_file"
                 fi
               done
