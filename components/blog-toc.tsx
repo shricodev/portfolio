@@ -9,7 +9,7 @@ import {
   GmailIcon,
 } from '@/components/icons'
 import { InfoTooltip } from '@/components/info-tooltip'
-import type { TocItem } from '@/lib/blogs/render'
+import type { TocItem } from '@/lib/markdown/render'
 
 const CONNECT_LINKS = [
   {

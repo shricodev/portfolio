@@ -1,12 +1,12 @@
 import { BackButton } from '@/components/back-button'
 import { AlertIcon, ArrowLeftIcon, ArrowUpRightIcon } from '@/components/icons'
-import Markdown from '@/components/markdown'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge, badgeVariants } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/user-avatar'
 import { BASE_URL, PROJECT_FILTER_TOPIC } from '@/lib/constants'
 import { getProjectByTitle, getProjectsMetadata } from '@/lib/projects'
+import { renderMarkdown } from '@/lib/markdown/render'
 import { formatDate, serializeJsonLd } from '@/lib/utils'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -99,6 +99,10 @@ export default async function Page(props: Props) {
   if (!project) notFound()
 
   const { metadata, content } = project
+  const hasReadme = content.trim().length > 0
+  const readme = hasReadme
+    ? await renderMarkdown(content, { repo: projectName })
+    : null
   const { title, author, clone_url, topics, created_at } = metadata
   const projectCreatedDate = formatDate({ date: created_at, short: true })
   const projectUrl = new URL(`/projects/${projectName}`, BASE_URL).toString()
@@ -211,8 +215,8 @@ export default async function Page(props: Props) {
       </header>
 
       <article className='prose dark:prose-invert mt-12 max-w-3xl'>
-        {content.trim().length > 0 ? (
-          <Markdown projectName={projectName} source={content} />
+        {readme ? (
+          readme.content
         ) : (
           <div className='flex flex-col items-center justify-center gap-4 py-10 text-center'>
             <AlertIcon className='text-muted-foreground size-12' />

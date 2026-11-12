@@ -2,20 +2,22 @@ import { EmbeddedTweet, enrichTweet } from 'react-tweet'
 import { getTweet } from 'react-tweet/api'
 import { ArrowUpRightIcon } from '@/components/icons'
 
-function extractYouTubeId(input: string): string {
+function extractYouTubeId(input: string): string | null {
   const trimmed = input.trim()
   const match = trimmed.match(
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/,
   )
-  return match ? match[1] : trimmed
+  if (match) return match[1]
+  return /^[A-Za-z0-9_-]{11}$/.test(trimmed) ? trimmed : null
 }
 
 export function YouTubeEmbed({ id }: { id: string }) {
   const videoId = extractYouTubeId(id)
+  if (!videoId) return <FallbackLink kind='link' target={id} />
   return (
     <div className='not-prose my-6 aspect-video w-full overflow-hidden rounded-md border border-border'>
       <iframe
-        src={`https://www.youtube.com/embed/${videoId}`}
+        src={`https://www.youtube-nocookie.com/embed/${videoId}`}
         title='YouTube video'
         loading='lazy'
         allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
@@ -101,6 +103,14 @@ export function FallbackLink({
 }) {
   const label = KIND_LABELS[kind] ?? kind.charAt(0).toUpperCase() + kind.slice(1)
   const href = normalizeHref(target, kind)
+  // only ever link out to real web URLs
+  if (!/^https?:\/\//.test(href)) {
+    return (
+      <span className='not-prose border-border bg-muted/30 text-muted-foreground my-6 block rounded-md border px-4 py-3 text-sm'>
+        {label}: {target}
+      </span>
+    )
+  }
   return (
     <a
       href={href}

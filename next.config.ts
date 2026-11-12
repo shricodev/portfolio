@@ -1,16 +1,13 @@
 import type { NextConfig } from 'next'
+import { OPTIMIZED_IMAGE_HOSTS } from './lib/image-hosts'
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '*',
-        port: '',
-        pathname: '/**',
-      },
-    ],
+    remotePatterns: OPTIMIZED_IMAGE_HOSTS.map(hostname => ({
+      protocol: 'https' as const,
+      hostname,
+    })),
   },
   async redirects() {
     return ['/feed', '/feed.xml', '/rss', '/rss2', '/rss2.xml'].map(source => ({

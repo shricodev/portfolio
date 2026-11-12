@@ -23,7 +23,7 @@ import { BackButton } from '@/components/back-button'
 import { Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { BlogToc } from '@/components/blog-toc'
-import { renderBlogContent } from '@/lib/blogs/render'
+import { renderMarkdown } from '@/lib/markdown/render'
 
 interface Props {
   params: Promise<{
@@ -102,7 +102,9 @@ export default async function Page(props: Props) {
 
   const { source } = decodeSourceSlug(slug)
   const sourceName = source === 'devto' ? 'DEV' : 'freeCodeCamp'
-  const { content, toc } = await renderBlogContent(post.content.markdown)
+  const { content, toc } = await renderMarkdown(post.content.markdown, {
+    embeds: true,
+  })
   const internalUrl = new URL(`/blogs/${slug}`, BASE_URL).toString()
   const blogJsonLd = {
     '@context': 'https://schema.org',
