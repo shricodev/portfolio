@@ -10,7 +10,7 @@ events, and contact information.
 
 ## What is included
 
-- Recent projects and a searchable project archive
+- Curated featured projects plus a searchable, filterable project archive
 - DEV and freeCodeCamp articles aggregated into one searchable blog index
 - Server-rendered Markdown with syntax highlighting, embeds, and sanitization
 - Work history, community events, contact form, scheduling, RSS, and metadata
@@ -48,7 +48,6 @@ The application expects these variables:
 ```dotenv
 RESEND_API_KEY=re_...
 RESEND_FROM_EMAIL=contact@example.com
-NEXT_PUBLIC_MODE=development
 ```
 
 Start the development server:
@@ -73,8 +72,8 @@ and pushes to `main` run those checks plus a production build in GitHub Actions.
 
 ## Content maintenance
 
-- Recent projects are generated from the newest synced repositories tagged with
-  the `showcase` topic, so they do not need a separate manual update.
+- Featured projects are hand-picked in `FEATURED_PROJECTS` (`lib/constants.ts`).
+  Everything else tagged `showcase` is listed newest first.
 - Project pages are sourced from `content/projects/*_README.mdx`.
 - `.github/workflows/fetch_project_readmes.yml` refreshes showcase repositories
   daily and removes entries that no longer carry the `showcase` topic.

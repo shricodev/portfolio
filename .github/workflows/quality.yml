@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      NEXT_PUBLIC_MODE: production
       RESEND_API_KEY: re_ci_placeholder
       RESEND_FROM_EMAIL: portfolio@example.com
     steps:

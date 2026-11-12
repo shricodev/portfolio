@@ -13,14 +13,7 @@ export const env = createEnv({
       .min(1, { message: 'Email is required.' })
       .email('Invalid email.'),
   },
-  /*
-   * Environment variables available on the client (and server).
-   *
-   * 💡 You'll get type errors if these are not prefixed with NEXT_PUBLIC_.
-   */
-  client: {
-    NEXT_PUBLIC_MODE: z.string().min(1, { message: 'Required' }),
-  },
+  client: {},
   /*
    * Due to how Next.js bundles environment variables on Edge and Client,
    * we need to manually destructure them to make sure all are included in bundle.
@@ -30,6 +23,5 @@ export const env = createEnv({
   runtimeEnv: {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
-    NEXT_PUBLIC_MODE: process.env.NEXT_PUBLIC_MODE,
   },
 })
