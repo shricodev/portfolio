@@ -1,244 +1,172 @@
-import { BackButton } from '@/components/back-button'
-import { AlertIcon, ArrowLeftIcon, ArrowUpRightIcon } from '@/components/icons'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge, badgeVariants } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { UserAvatar } from '@/components/user-avatar'
-import { BASE_URL, PROJECT_FILTER_TOPIC } from '@/lib/constants'
-import { getProjectByTitle, getProjectsMetadata } from '@/lib/projects'
+import { BackLink } from '@/components/back-link'
+import { ArrowUpRightIcon, GitHubIcon } from '@/components/icons'
+import { buttonVariants } from '@/components/ui/button'
+import { BASE_URL } from '@/lib/constants'
 import { renderMarkdown } from '@/lib/markdown/render'
+import {
+  getAllProjects,
+  getProjectByTitle,
+  toListItem,
+} from '@/lib/projects'
 import { formatDate, serializeJsonLd } from '@/lib/utils'
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
 
 interface Props {
-  params: Promise<{
-    projectName: string
-  }>
+  params: Promise<{ projectName: string }>
 }
 
-// Static Site Generation (SSG) to improve performance on static contents.
-export async function generateStaticParams() {
-  try {
-    const projectsMetadata = getProjectsMetadata({ all: true })
-    const projectSlugs = projectsMetadata.map(project => ({
-      projectName: project.title,
-    }))
-    return projectSlugs
-  } catch (error) {
-    console.error('Error generating static params for projects:', error)
-    return []
-  }
+// every project page is built ahead of time
+export function generateStaticParams() {
+  return getAllProjects().map(project => ({ projectName: project.title }))
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { projectName } = await props.params
-  const DEFAULT_METADATA = {
-    title: projectName,
-    description: 'A project by Shrijal Acharya showcasing work and skills.',
-  } as const
+  const project = getProjectByTitle(projectName)
+  if (!project) return { title: 'Project not found' }
 
-  try {
-    const project = getProjectByTitle({ title: projectName })
+  const item = toListItem(project.metadata)
+  const url = new URL(`/projects/${projectName}`, BASE_URL).toString()
+  const meta = {
+    title: item.title,
+    description:
+      item.description || `${item.title}, a project by Shrijal Acharya.`,
+  }
 
-    if (!project) throw new Error(`Project not found: ${projectName}`)
-
-    const { title, description } = project.metadata
-    const baseMetadata = {
-      title,
-      description: description || DEFAULT_METADATA.description,
-    }
-
-    return {
-      ...baseMetadata,
-      alternates: {
-        canonical: new URL(`/projects/${projectName}`, BASE_URL).toString(),
-      },
-      openGraph: {
-        ...baseMetadata,
-        url: new URL(`/projects/${projectName}`, BASE_URL).toString(),
-      },
-      twitter: {
-        ...baseMetadata,
-        card: 'summary_large_image',
-      },
-    }
-  } catch (error) {
-    console.error(
-      `Error generating dynamic metadata for project: ${projectName}: `,
-      error,
-    )
-
-    return {
-      ...DEFAULT_METADATA,
-      openGraph: {
-        ...DEFAULT_METADATA,
-        url: new URL(`/projects/${projectName}`, BASE_URL).toString(),
-      },
-      twitter: {
-        ...DEFAULT_METADATA,
-        card: 'summary_large_image',
-      },
-    }
+  return {
+    ...meta,
+    alternates: { canonical: url },
+    openGraph: { ...meta, url, type: 'article' },
+    twitter: { ...meta, card: 'summary_large_image' },
   }
 }
 
 export default async function Page(props: Props) {
   const { projectName } = await props.params
-
-  let project: ReturnType<typeof getProjectByTitle>
-  try {
-    project = getProjectByTitle({ title: projectName })
-  } catch (error) {
-    console.error(`Error fetching project: ${projectName}`, error)
-    notFound()
-  }
-
+  const project = getProjectByTitle(projectName)
   if (!project) notFound()
 
   const { metadata, content } = project
-  const hasReadme = content.trim().length > 0
-  const readme = hasReadme
+  const item = toListItem(metadata)
+  const readme = content.trim()
     ? await renderMarkdown(content, { repo: projectName })
     : null
-  const { title, author, clone_url, topics, created_at } = metadata
-  const projectCreatedDate = formatDate({ date: created_at, short: true })
-  const projectUrl = new URL(`/projects/${projectName}`, BASE_URL).toString()
+
+  const facts = [
+    { label: 'Language', value: item.language },
+    { label: 'Created', value: formatDate(metadata.created_at, 'short') },
+    {
+      label: 'Updated',
+      value: metadata.updated_at
+        ? formatDate(metadata.updated_at, 'short')
+        : null,
+    },
+  ].filter(fact => fact.value)
+
   const projectJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareSourceCode',
-    name: title,
-    description: metadata.description,
-    url: projectUrl,
-    codeRepository: clone_url.replace(/\.git$/, ''),
-    programmingLanguage: metadata.language || undefined,
+    name: item.title,
+    description: item.description || undefined,
+    url: new URL(`/projects/${projectName}`, BASE_URL).toString(),
+    codeRepository: item.repo,
+    programmingLanguage: item.language || undefined,
+    keywords: item.topics.join(', ') || undefined,
     dateCreated: metadata.created_at,
     dateModified: metadata.updated_at,
-    author: {
-      '@type': 'Person',
-      name: 'Shrijal Acharya',
-      url: BASE_URL,
-    },
+    author: { '@type': 'Person', name: 'Shrijal Acharya', url: BASE_URL },
   }
 
   return (
-    <section className='pb-10'>
+    <section>
       <script
         type='application/ld+json'
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(projectJsonLd) }}
       />
-      <Suspense
-        fallback={
-          <Button disabled variant='secondary' className='mb-8 flex gap-2'>
-            <ArrowLeftIcon className='size-5' />
-            Back to projects
-          </Button>
-        }
-      >
-        <BackButton endpoint='projects' />
-      </Suspense>
+      <BackLink href='/projects' label='All projects' />
 
-      <header>
-        <Alert className='mb-8'>
-          <AlertIcon className='size-5' />
-          <AlertTitle className='text-sm font-semibold uppercase'>
-            Heads up!
-          </AlertTitle>
-          <AlertDescription className='text-muted-foreground text-sm'>
-            The README content here can be outdated. To read the latest version,
-            visit my{' '}
+      <header className='border-border mt-8 border-b pb-8'>
+        <p className='eyebrow'>Project</p>
+        <h1 className='mt-2 font-mono text-2xl font-semibold tracking-tight break-words sm:text-3xl'>
+          {item.title}
+        </h1>
+        {item.description && (
+          <p className='text-muted-foreground mt-3 max-w-2xl leading-7'>
+            {item.description}
+          </p>
+        )}
+
+        <div className='mt-6 flex flex-wrap gap-3'>
+          <a
+            href={item.repo}
+            target='_blank'
+            rel='noreferrer noopener'
+            className={buttonVariants({ className: 'gap-2' })}
+          >
+            <GitHubIcon className='size-4' />
+            View source
+          </a>
+          {item.homepage && (
             <a
-              href='https://github.com/shricodev'
+              href={item.homepage}
               target='_blank'
               rel='noreferrer noopener'
-              className='text-muted-foreground hover:text-foreground font-semibold underline underline-offset-4'
+              className={buttonVariants({
+                variant: 'outline',
+                className: 'gap-1.5',
+              })}
             >
-              GitHub
-            </a>{' '}
-            profile.
-          </AlertDescription>
-        </Alert>
-
-        <h1 className='flex items-center gap-2 text-3xl font-bold'>
-          <a
-            href={clone_url}
-            target='_blank'
-            rel='noreferrer noopener'
-            className='hover:underline hover:underline-offset-4'
-          >
-            {title}
-          </a>
-        </h1>
-
-        <div className='mt-3 flex items-center'>
-          <Link href='/contact' className='flex items-center'>
-            <UserAvatar className='size-8 sm:mr-2' />
-            {author && (
-              <span className='text-muted-foreground hidden text-sm font-semibold hover:underline hover:underline-offset-2 sm:inline'>
-                {author}
-              </span>
-            )}
-          </Link>
-          <span className='divider mx-1'>•</span>
-          <a
-            href={clone_url}
-            target='_blank'
-            rel='noreferrer noopener'
-            className='text-muted-foreground flex items-center gap-1 text-sm font-semibold hover:underline hover:underline-offset-2'
-          >
-            View on GitHub
-          </a>
-          <span className='divider mx-1'>•</span>
-          {projectCreatedDate && (
-            <span className='text-muted-foreground text-sm'>
-              {projectCreatedDate}
-            </span>
+              Live demo
+              <ArrowUpRightIcon className='size-4' />
+            </a>
           )}
         </div>
 
-        {topics && topics?.length > 0 && (
-          <div className='mt-4 flex flex-wrap gap-2'>
-            {topics
-              .filter(topic => topic !== PROJECT_FILTER_TOPIC)
-              .map(topic => (
-                <Badge
-                  key={topic}
-                  className={badgeVariants({ variant: 'secondary' })}
-                >
-                  {topic}
-                </Badge>
-              ))}
-          </div>
+        <dl className='mt-8 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3'>
+          {facts.map(fact => (
+            <div key={fact.label}>
+              <dt className='eyebrow'>{fact.label}</dt>
+              <dd className='mt-1 text-sm'>{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        {item.topics.length > 0 && (
+          <ul className='mt-6 flex flex-wrap gap-x-3 gap-y-1'>
+            {item.topics.map(topic => (
+              <li
+                key={topic}
+                className='text-muted-foreground font-mono text-xs'
+              >
+                #{topic}
+              </li>
+            ))}
+          </ul>
         )}
       </header>
 
-      <article className='prose dark:prose-invert mt-12 max-w-3xl'>
-        {readme ? (
-          readme.content
-        ) : (
-          <div className='flex flex-col items-center justify-center gap-4 py-10 text-center'>
-            <AlertIcon className='text-muted-foreground size-12' />
-            <div className='flex flex-col gap-4'>
-              <h2 className='m-0 text-xl font-semibold'>No README Content</h2>
-              <p className='text-muted-foreground'>
-                This project doesn&apos;t have a README file yet or the file has
-                no content. Check the GitHub repository for more information.
-              </p>
-            </div>
-          </div>
-        )}
-      </article>
+      {readme ? (
+        <article className='prose mt-10 max-w-none'>{readme.content}</article>
+      ) : (
+        <p className='text-muted-foreground mt-10 text-sm'>
+          This project has no README yet. The repository on GitHub has the
+          details.
+        </p>
+      )}
 
-      <div className='text-muted-foreground mt-10 flex items-center gap-1 text-sm font-medium'>
-        <div className='hover:text-foreground flex items-center gap-1 hover:transition'>
-          <ArrowUpRightIcon className='size-4' />
-          <a href={clone_url} target='_blank' rel='noreferrer noopener'>
-            GitHub
-          </a>
-        </div>
-      </div>
+      <p className='border-border text-muted-foreground mt-12 border-t pt-6 text-sm'>
+        This page mirrors the README and may lag behind.{' '}
+        <a
+          href={item.repo}
+          target='_blank'
+          rel='noreferrer noopener'
+          className='text-foreground underline underline-offset-4'
+        >
+          Read the latest on GitHub
+        </a>
+        .
+      </p>
     </section>
   )
 }
