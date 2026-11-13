@@ -1,196 +1,98 @@
 import path from 'path'
 import fs from 'fs'
-import { TProject, TProjectMetadata } from '@/types/projects'
 import matter from 'gray-matter'
-import {
-  PAGE_INDEX_DEFAULT,
-  PROJECT_FILTER_TOPIC,
-  PROJECTS_BATCH_SIZE,
-} from '@/lib/constants'
-
-class ProjectError extends Error {
-  constructor(
-    message: string,
-    public readonly originalError?: unknown,
-  ) {
-    super(
-      originalError instanceof Error
-        ? `${message}: ${originalError.message}`
-        : message,
-    )
-    this.name = 'ProjectError'
-  }
-}
+import { cache } from 'react'
+import type {
+  TProject,
+  TProjectListItem,
+  TProjectMetadata,
+} from '@/types/projects'
+import { FEATURED_PROJECTS, PROJECT_FILTER_TOPIC } from '@/lib/constants'
 
 const projectsDirectory = path.resolve(process.cwd(), 'content', 'projects')
+const FILE_SUFFIX = '_README.mdx'
 
-function validateDirectory(dir: string) {
+// repo names only, so a URL param can never walk out of the content dir
+const SAFE_NAME_RE = /^[\w.-]+$/
+
+function readProject(fileName: string): TProject | null {
   try {
-    fs.accessSync(dir, fs.constants.R_OK)
-  } catch (error) {
-    throw new ProjectError(
-      `Directory ${dir} does not exist or is not accessible`,
-      error,
-    )
-  }
-}
-
-function getMDXFiles({ dir }: { dir: string }): string[] {
-  validateDirectory(dir)
-
-  try {
-    return fs
-      .readdirSync(dir, { withFileTypes: true })
-      .filter(dirent => dirent.isFile() && path.extname(dirent.name) === '.mdx')
-      .map(dirent => dirent.name)
-  } catch (error) {
-    throw new ProjectError(
-      `Failed to read MDX files from directory: ${dir}`,
-      error,
-    )
-  }
-}
-
-export function getProjectsCount(): number {
-  try {
-    const projectFiles = getMDXFiles({ dir: projectsDirectory })
-    return projectFiles.filter(file => {
-      const metadata = getProjectMetadata({ projectFilePath: file })
-      return metadata?.topics?.includes(PROJECT_FILTER_TOPIC) === true
-    }).length
-  } catch (error) {
-    if (error instanceof ProjectError) throw error
-    throw new ProjectError('Failed to get projects length', error)
-  }
-}
-
-export function getProjectByTitle({
-  title,
-}: {
-  title: string
-}): TProject | null {
-  const projectFilePath = path.join(projectsDirectory, `${title}_README.mdx`)
-
-  try {
-    const projectFileContent = fs.readFileSync(projectFilePath, {
-      encoding: 'utf-8',
-    })
-
-    const { data, content } = matter(projectFileContent)
+    const raw = fs.readFileSync(path.join(projectsDirectory, fileName), 'utf-8')
+    const { data, content } = matter(raw)
+    if (!data.title || !data.topics?.includes(PROJECT_FILTER_TOPIC)) return null
     return {
-      metadata: {
-        ...data,
-        author: 'Shrijal Acharya',
-      } as TProjectMetadata,
+      metadata: { ...data, author: 'Shrijal Acharya' } as TProjectMetadata,
       content,
     }
   } catch (error) {
-    if (error instanceof ProjectError) throw error
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return null
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      console.error(`Could not read project file ${fileName}`, error)
     }
-    throw new ProjectError(
-      `Error reading project file: ${projectFilePath}`,
-      error,
-    )
+    return null
   }
 }
 
-export function getProjectMetadata({
-  projectFilePath,
-}: {
-  projectFilePath: string
-}): TProjectMetadata | null {
-  const projectAbsFilePath = path.join(projectsDirectory, projectFilePath)
-
-  try {
-    const projectFileContent = fs.readFileSync(projectAbsFilePath, {
-      encoding: 'utf-8',
-    })
-
-    const { data } = matter(projectFileContent)
-    return {
-      ...data,
-      author: 'Shrijal Acharya',
-    } as TProjectMetadata
-  } catch (error) {
-    if (error instanceof ProjectError) throw error
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return null
-    }
-    throw new ProjectError(
-      `Error reading metadata for file: ${projectAbsFilePath}`,
-      error,
-    )
-  }
+function byNewest(a: TProjectMetadata, b: TProjectMetadata) {
+  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
 }
 
-export function getProjectsMetadata({
-  page = PAGE_INDEX_DEFAULT,
-  perPage = PROJECTS_BATCH_SIZE,
-  all = false,
-}: {
-  page?: number
-  perPage?: number
-  all?: boolean
-}): TProjectMetadata[] {
+// Every showcased project, newest first. Files are tiny and read once per render.
+export const getAllProjects = cache((): TProjectMetadata[] => {
+  let files: string[] = []
   try {
-    const projectFiles = getMDXFiles({ dir: projectsDirectory })
-    const projectsWithMetadata = projectFiles
-      .map(file => getProjectMetadata({ projectFilePath: file }))
-      .filter(
-        (metadata): metadata is TProjectMetadata =>
-          metadata !== null &&
-          metadata.topics?.includes(PROJECT_FILTER_TOPIC) === true,
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      )
-
-    if (all) return projectsWithMetadata
-
-    const start = (page - 1) * perPage
-    return projectsWithMetadata.slice(start, start + perPage)
+    files = fs
+      .readdirSync(projectsDirectory)
+      .filter(name => name.endsWith(FILE_SUFFIX))
   } catch (error) {
-    if (error instanceof ProjectError) throw error
-    throw new ProjectError('Failed to get projects metadata', error)
+    console.error('Could not read the projects directory', error)
+    return []
   }
+
+  return files
+    .map(readProject)
+    .filter((project): project is TProject => project !== null)
+    .map(project => project.metadata)
+    .sort(byNewest)
+})
+
+export function getFeaturedProjects(): TProjectMetadata[] {
+  const all = getAllProjects()
+  return FEATURED_PROJECTS.map(name =>
+    all.find(project => project.title === name),
+  ).filter((project): project is TProjectMetadata => project !== undefined)
 }
 
-export function getProjectsWithContent({
-  page = PAGE_INDEX_DEFAULT,
-  perPage = PROJECTS_BATCH_SIZE,
-  all = false,
-}: {
-  page?: number
-  perPage?: number
-  all?: boolean
-}): TProject[] {
-  try {
-    const projectFiles = getMDXFiles({ dir: projectsDirectory })
-    const projectsWithContent = projectFiles
-      .map(file => {
-        const slug = file.replace(/_README\.mdx$/, '')
-        return getProjectByTitle({ title: slug })
-      })
-      .filter(
-        (project): project is TProject =>
-          project !== null &&
-          project.metadata.topics?.includes(PROJECT_FILTER_TOPIC) === true,
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.metadata.created_at).getTime() -
-          new Date(a.metadata.created_at).getTime(),
-      )
+export function getProjectByTitle(title: string): TProject | null {
+  if (!SAFE_NAME_RE.test(title)) return null
+  return readProject(`${title}${FILE_SUFFIX}`)
+}
 
-    if (all) return projectsWithContent
+// Repo descriptions are written for GitHub: emoji up front, links at the end.
+// Trim both so they read cleanly in a list.
+export function cleanDescription(description?: string): string {
+  if (!description) return ''
+  return description
+    .replace(/(?:blog|docs|demo)?:?\s*https?:\/\/\S+/gi, '')
+    .replace(/[\p{Extended_Pictographic}️‍]/gu, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
 
-    const start = (page - 1) * perPage
-    return projectsWithContent.slice(start, start + perPage)
-  } catch (error) {
-    if (error instanceof ProjectError) throw error
-    throw new ProjectError('Failed to get projects with content', error)
+export function repoUrl(project: TProjectMetadata): string {
+  return project.clone_url.replace(/\.git$/, '')
+}
+
+export function toListItem(project: TProjectMetadata): TProjectListItem {
+  return {
+    title: project.title,
+    description: cleanDescription(project.description),
+    language: project.language ?? '',
+    homepage: project.homepage ?? '',
+    repo: repoUrl(project),
+    year: project.created_at.slice(0, 4),
+    topics: (project.topics ?? []).filter(
+      topic => topic !== PROJECT_FILTER_TOPIC,
+    ),
+    featured: FEATURED_PROJECTS.includes(project.title),
   }
 }

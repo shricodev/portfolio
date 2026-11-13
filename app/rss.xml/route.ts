@@ -1,109 +1,83 @@
-import { getBlogPostsCardMeta, encodeSourceSlug } from '@/lib/blogs'
+import { getAllBlogPosts, encodeSourceSlug } from '@/lib/blogs'
 import { BASE_URL, PUBLIC_GMAIL } from '@/lib/constants'
-import { getProjectsMetadata } from '@/lib/projects'
+import { cleanDescription, getAllProjects } from '@/lib/projects'
 import RSS from 'rss'
 
+// Built once and refreshed hourly instead of on every request.
+export const dynamic = 'force-static'
+export const revalidate = 3600
+
+// XML 1.0 forbids most control characters, even inside CDATA. One stray
+// byte in a post summary would make the whole feed unparseable.
+function xmlSafe(value: string): string {
+  return value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '')
+}
+
+function absolute(path: string): string {
+  return new URL(path, BASE_URL).toString()
+}
+
 export async function GET() {
-  let blogs: Awaited<ReturnType<typeof getBlogPostsCardMeta>>['blogs'] = []
-  try {
-    const result = await getBlogPostsCardMeta({ all: true })
-    blogs = result.blogs
-  } catch (error) {
+  const blogs = await getAllBlogPosts().catch(error => {
     console.error('Failed to fetch blogs for RSS:', error)
-  }
-
-  const projects = getProjectsMetadata({ all: true })
-  const itemDates = [
-    ...blogs.map(blog => new Date(blog.updatedAt ?? blog.publishedAt)),
-    ...projects.map(
-      project => new Date(project.updated_at || project.created_at),
-    ),
-  ].filter(date => !Number.isNaN(date.getTime()))
-  const latestItemDate = itemDates.reduce<Date | undefined>(
-    (latest, date) => (!latest || date > latest ? date : latest),
-    undefined,
-  )
-
-  const feedConfig = {
-    title: 'Shrijal Acharya',
-    description:
-      'Stay updated with the latest selected public GitHub repositories and blog posts from Shrijal Acharya.',
-    site_url: new URL(BASE_URL).toString(),
-    feed_url: new URL('/rss.xml', BASE_URL).toString(),
-    image_url: new URL('/images/shrijal-acharya.webp', BASE_URL).toString(),
-    author: `${PUBLIC_GMAIL} (Shrijal Acharya)`,
-    copyright: `${new Date().getFullYear()} Shrijal Acharya. All rights reserved.`,
-    pubDate: latestItemDate ?? new Date(),
-    language: 'en',
-    categories: ['Blogs', 'Projects'],
-    generator: 'RSS Feed for Node and Next.js',
-    ttl: 60,
-  }
-
-  const rss = new RSS({
-    ...feedConfig,
-    managingEditor: feedConfig.author,
-    webMaster: feedConfig.author,
+    return []
   })
+  const projects = getAllProjects()
 
-  const createRSSItem = ({
-    title,
-    description,
-    url,
-    date,
-    author,
-    category,
-  }: {
-    title: string
-    description: string
-    url: string
-    date: Date
-    author: string
-    category: string
-  }) => {
-    rss.item({
-      title,
-      description,
-      url,
-      date,
-      author,
-      categories: [category],
-    })
-  }
-
-  // Add blog posts to RSS feed
-  blogs.forEach(blog => {
-    createRSSItem({
+  const items = [
+    ...blogs.map(blog => ({
       title: blog.title,
-      description: blog.brief
-        ? blog.brief
-        : `${blog.title} blog by Shrijal Acharya`,
-      url: new URL(
-        `/blogs/${encodeSourceSlug(blog.source, blog.slug)}`,
-        BASE_URL,
-      ).toString(),
+      description: blog.brief || `${blog.title}, a blog post by Shrijal Acharya`,
+      url: absolute(`/blogs/${encodeSourceSlug(blog.source, blog.slug)}`),
       date: new Date(blog.publishedAt),
-      author: blog.author.name,
       category: 'Blogs',
-    })
-  })
-
-  projects.forEach(project => {
-    createRSSItem({
+    })),
+    ...projects.map(project => ({
       title: project.title,
       description:
-        project.description ?? `${project.title} project by Shrijal Acharya`,
-      url: new URL(`/projects/${project.title}`, BASE_URL).toString(),
-      date: new Date(project.updated_at || project.created_at),
-      author: project.author ?? 'Shrijal Acharya',
+        cleanDescription(project.description) ||
+        `${project.title}, a project by Shrijal Acharya`,
+      url: absolute(`/projects/${project.title}`),
+      // created_at never moves, so readers don't see old projects resurface
+      date: new Date(project.created_at),
       category: 'Projects',
-    })
+    })),
+  ]
+    .filter(item => !Number.isNaN(item.date.getTime()))
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+
+  const author = `${PUBLIC_GMAIL} (Shrijal Acharya)`
+  const feed = new RSS({
+    title: 'Shrijal Acharya',
+    description:
+      'New blog posts and open-source projects from Shrijal Acharya.',
+    site_url: absolute('/'),
+    feed_url: absolute('/rss.xml'),
+    // RSS readers expect PNG, JPEG or GIF here, not WebP
+    image_url: absolute('/android-chrome-192x192.png'),
+    managingEditor: author,
+    webMaster: author,
+    copyright: `${new Date().getFullYear()} Shrijal Acharya`,
+    pubDate: items[0]?.date ?? new Date(),
+    language: 'en',
+    categories: ['Blogs', 'Projects'],
+    ttl: 60,
   })
 
-  const xml = rss.xml()
-  return new Response(xml, {
+  for (const item of items) {
+    feed.item({
+      title: xmlSafe(item.title),
+      description: xmlSafe(item.description),
+      url: item.url,
+      date: item.date,
+      author: 'Shrijal Acharya',
+      categories: [item.category],
+    })
+  }
+
+  return new Response(feed.xml({ indent: true }), {
     headers: {
-      'Content-Type': 'application/xml; charset=utf-8',
+      'Content-Type': 'application/rss+xml; charset=utf-8',
       'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
     },
   })

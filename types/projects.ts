@@ -14,3 +14,15 @@ export type TProjectMetadata = {
   created_at: string
   updated_at?: string
 }
+
+// trimmed-down shape sent to the client list
+export type TProjectListItem = {
+  title: string
+  description: string
+  language: string
+  homepage: string
+  repo: string
+  year: string
+  topics: string[]
+  featured: boolean
+}
