@@ -10,6 +10,7 @@ import type {
   TBlogPostDetail,
 } from '@/types/blogs'
 import { createLimiter } from '@/lib/blogs/limit'
+import { cache } from 'react'
 
 // Dev.to rate-limits unauthenticated traffic per IP. Cap concurrent
 // in-flight calls per worker process so static generation does not
@@ -114,57 +115,43 @@ export async function getDevtoPosts(
   return articles.map(normalizeDevtoArticle)
 }
 
-// Cache the full list of Dev.to posts to avoid redundant API calls during build.
-// Multiple pages/generateStaticParams/generateMetadata calls all need the list.
-let cachedDevtoPosts: TBlogCardMetadata[] | null = null
+// Deduped per render with React cache. Across renders the fetch data cache
+// (revalidate above) does the work, so this never goes stale in a long-lived
+// server the way a module-level variable would.
+export const getAllDevtoPosts = cache(
+  async (): Promise<TBlogCardMetadata[]> => {
+    const allPosts: TBlogCardMetadata[] = []
+    let page = 1
 
-export async function getAllDevtoPosts(): Promise<TBlogCardMetadata[]> {
-  if (cachedDevtoPosts) return cachedDevtoPosts
+    while (true) {
+      const posts = await getDevtoPosts(page, DEVTO_BLOGS_PER_PAGE)
+      allPosts.push(...posts)
+      if (posts.length < DEVTO_BLOGS_PER_PAGE) break
+      page++
+    }
 
-  const allPosts: TBlogCardMetadata[] = []
-  let page = 1
+    return allPosts
+  },
+)
 
-  while (true) {
-    const posts = await getDevtoPosts(page, DEVTO_BLOGS_PER_PAGE)
-    if (posts.length === 0) break
-    allPosts.push(...posts)
-    if (posts.length < DEVTO_BLOGS_PER_PAGE) break
-    page++
-  }
-
-  cachedDevtoPosts = allPosts
-  return allPosts
-}
-
+// Returns null only when the post doesn't exist. API failures throw, so an
+// ISR revalidation keeps serving the last good page instead of caching a 404.
 export async function getDevtoPostBySlug(
   slug: string,
 ): Promise<TBlogPostDetail | null> {
-  try {
-    // Articles published under orgs use the org's username in the path,
-    // not the author's. To handle this, we first resolve the slug to an
-    // article ID via the list endpoint, then fetch by ID for the full body.
-    const allPosts = await getAllDevtoPosts()
-    const match = allPosts.find(p => p.slug === slug)
-    if (!match) return null
+  // Org posts live under the org's username, so resolve the slug to an id
+  // through the list first, then fetch the full body by id.
+  const allPosts = await getAllDevtoPosts()
+  const match = allPosts.find(p => p.slug === slug)
+  if (!match) return null
 
-    const articleId = Number(match.id)
-    const article = await fetchDevto<TDevtoArticleDetail>(
-      `/articles/${articleId}`,
-    )
+  const article = await fetchDevto<TDevtoArticleDetail>(`/articles/${match.id}`)
 
-    const card = normalizeDevtoArticle(article)
-
-    return {
-      ...card,
-      content: {
-        markdown: article.body_markdown,
-        html: article.body_html,
-      },
-      // Comments are fetched separately via getDevtoComments() at runtime
-      // to avoid 429 rate limits during static builds.
-    }
-  } catch (error) {
-    console.error(`Failed to fetch Dev.to post by slug: ${slug}`, error)
-    return null
+  return {
+    ...normalizeDevtoArticle(article),
+    content: {
+      markdown: article.body_markdown,
+      html: article.body_html,
+    },
   }
 }

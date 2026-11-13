@@ -1,111 +1,87 @@
 import Image from 'next/image'
-import Link from 'next/link'
-import {
-  ArrowLeftIcon,
-  ArrowUpRightIcon,
-  HeartIcon,
-  CommentIcon,
-  DevToIcon,
-  FreeCodeCampIcon,
-} from '@/components/icons'
-import { formatDate, serializeJsonLd } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
-import { UserAvatar } from '@/components/user-avatar'
+import { ArrowUpRightIcon } from '@/components/icons'
+import { BackLink } from '@/components/back-link'
+import { BlogToc } from '@/components/blog-toc'
+import { SOURCE_LABELS } from '@/components/post-row'
 import {
   getBlogPostBySlug,
   getBlogPostCardBySlug,
-  decodeSourceSlug,
+  getAllBlogPostSlugs,
 } from '@/lib/blogs'
-import type { Metadata } from 'next'
 import { BASE_URL } from '@/lib/constants'
-import { notFound } from 'next/navigation'
-import { BackButton } from '@/components/back-button'
-import { Suspense } from 'react'
-import { Button } from '@/components/ui/button'
-import { BlogToc } from '@/components/blog-toc'
+import { canOptimizeImage } from '@/lib/image-hosts'
 import { renderMarkdown } from '@/lib/markdown/render'
+import { formatCount, formatDate, serializeJsonLd } from '@/lib/utils'
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 
 interface Props {
-  params: Promise<{
-    slug: string
-  }>
+  params: Promise<{ slug: string }>
+}
+
+// Rebuild each article at most once an hour.
+export const revalidate = 3600
+
+// Every post is built ahead of time, new ones show up on first visit.
+export async function generateStaticParams() {
+  try {
+    return await getAllBlogPostSlugs()
+  } catch (error) {
+    console.error('Could not list blog posts to prerender', error)
+    return []
+  }
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { slug } = await props.params
-  const DEFAULT_METADATA = {
-    title: 'Blog by Shrijal Acharya',
-    description:
-      'Explore the blog by Shrijal Acharya, covering programming, development, and tech insights.',
+  const post = await getBlogPostCardBySlug(slug).catch(() => null)
+  if (!post) return { title: 'Blog post' }
+
+  const meta = {
+    title: post.title,
+    description: post.seo?.description || post.brief || undefined,
   }
+  const images = post.coverImage ? [{ url: post.coverImage }] : undefined
 
+  return {
+    ...meta,
+    // The original publisher is canonical and this copy stays out of the
+    // index, so search engines don't see duplicate content.
+    alternates: { canonical: post.sourceUrl },
+    robots: { index: false, follow: true },
+    openGraph: {
+      ...meta,
+      type: 'article',
+      publishedTime: post.publishedAt,
+      url: new URL(`/blogs/${slug}`, BASE_URL).toString(),
+      images,
+    },
+    twitter: { ...meta, card: 'summary_large_image', images },
+  }
+}
+
+async function loadPost(slug: string) {
   try {
-    const post = await getBlogPostCardBySlug(slug)
-    if (!post) throw new Error('Post not found')
-
-    const { title, seo, brief, coverImage, sourceUrl } = post
-    const description =
-      seo?.description || brief || DEFAULT_METADATA.description
-    const imageData = coverImage ? { images: [{ url: coverImage }] } : undefined
-
-    const baseMetadata = { title, description }
-
-    return {
-      ...baseMetadata,
-      // Canonical points at the original publisher so search engines credit
-      // them instead of treating this page as duplicate content.
-      alternates: {
-        canonical: sourceUrl,
-      },
-      robots: {
-        index: false,
-        follow: true,
-      },
-      openGraph: {
-        ...baseMetadata,
-        url: new URL(`/blogs/${slug}`, BASE_URL).toString(),
-        ...imageData,
-      },
-      twitter: {
-        ...baseMetadata,
-        card: 'summary_large_image',
-        ...imageData,
-      },
-    }
+    return await getBlogPostBySlug(slug)
   } catch (error) {
-    console.error(`Error generating dynamic metadata for blog: ${slug}`, error)
-
-    return {
-      ...DEFAULT_METADATA,
-      openGraph: {
-        ...DEFAULT_METADATA,
-        url: new URL(`/blogs/${slug}`, BASE_URL).toString(),
-      },
-      twitter: {
-        ...DEFAULT_METADATA,
-        card: 'summary_large_image',
-      },
-    }
+    console.error(`Could not load blog post: ${slug}`, error)
+    // A flaky API shouldn't fail the whole build. At runtime we rethrow so
+    // the previously cached page keeps being served.
+    if (process.env.NEXT_PHASE === 'phase-production-build') return null
+    throw error
   }
 }
 
 export default async function Page(props: Props) {
   const { slug } = await props.params
-  let post
-  try {
-    post = await getBlogPostBySlug(slug)
-  } catch (error) {
-    console.error(`Error fetching blog post for slug: ${slug}`, error)
-    notFound()
-  }
+  const post = await loadPost(slug)
   if (!post) notFound()
 
-  const { source } = decodeSourceSlug(slug)
-  const sourceName = source === 'devto' ? 'DEV' : 'freeCodeCamp'
+  const sourceName = SOURCE_LABELS[post.source]
   const { content, toc } = await renderMarkdown(post.content.markdown, {
     embeds: true,
   })
-  const internalUrl = new URL(`/blogs/${slug}`, BASE_URL).toString()
+
   const blogJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -115,7 +91,7 @@ export default async function Page(props: Props) {
     datePublished: post.publishedAt,
     dateModified: post.updatedAt ?? post.publishedAt,
     mainEntityOfPage: post.sourceUrl,
-    url: internalUrl,
+    url: new URL(`/blogs/${slug}`, BASE_URL).toString(),
     author: {
       '@type': 'Person',
       name: post.author?.name || 'Shrijal Acharya',
@@ -123,135 +99,89 @@ export default async function Page(props: Props) {
     },
   }
 
+  const meta = [
+    formatDate(post.publishedAt),
+    `${post.readTimeInMinutes} min read`,
+    post.reactionsCount > 0
+      ? `${formatCount(post.reactionsCount)} reactions`
+      : null,
+    post.commentsCount > 0 ? `${post.commentsCount} comments` : null,
+  ].filter(Boolean)
+
   return (
-    <section className='pb-10'>
+    <section>
       <script
         type='application/ld+json'
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(blogJsonLd) }}
       />
-      <BlogToc headings={toc} />
-      <Suspense
-        fallback={
-          <Button disabled variant='secondary' className='mb-8 flex gap-2'>
-            <ArrowLeftIcon className='size-5' />
-            Back to blogs
-          </Button>
-        }
-      >
-        <BackButton endpoint='blogs' />
-      </Suspense>
+      <BackLink href='/blogs' label='All blogs' />
 
-      {post.coverImage ? (
-        <div className='relative mb-6 aspect-[1000/420] w-full overflow-hidden rounded-md'>
-          <Image
-            src={post.coverImage}
-            alt={post.title}
-            fill
-            sizes='(max-width: 768px) 100vw, 750px'
-            className='object-cover'
-            preload
-            unoptimized={post.coverImage.toLowerCase().endsWith('.gif')}
-          />
-        </div>
-      ) : null}
-
-      <header>
-        <div className='text-muted-foreground mb-3 flex flex-wrap items-center gap-2 text-sm'>
-          {source === 'devto' ? (
-            <DevToIcon className='size-4' />
-          ) : (
-            <FreeCodeCampIcon className='size-4' />
-          )}
-          <span>
-            Originally published on{' '}
-            <a
-              href={post.sourceUrl}
-              target='_blank'
-              rel='canonical noreferrer noopener'
-              className='text-foreground hover:text-muted-foreground font-semibold underline underline-offset-4'
-            >
-              {sourceName}
-            </a>
-          </span>
-          {post.organization && (
-            <>
-              <span>·</span>
-              <span>{post.organization.name}</span>
-            </>
-          )}
-        </div>
-
-        <h1 className='decoration-border/75 text-3xl font-bold decoration-2'>
+      <header className='mt-8'>
+        <p className='eyebrow'>
+          {sourceName}
+          {post.organization ? ` / ${post.organization.name}` : ''}
+        </p>
+        <h1 className='mt-3 text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl'>
           {post.title}
         </h1>
-
-        {post.subtitle ? (
-          <p className='text-muted-foreground py-3 text-xl font-semibold'>
-            {post.subtitle}
-          </p>
-        ) : null}
-
-        <div className='mt-3 flex items-center'>
-          <Link href='/contact' className='flex items-center'>
-            <UserAvatar className='mr-2 size-8' />
-            {post.author?.name ? (
-              <span className='text-muted-foreground hidden text-sm font-semibold hover:underline hover:underline-offset-2 sm:inline'>
-                {post.author?.name}
-              </span>
-            ) : null}
-            <span className='divider mr-1 sm:mx-1'>·</span>
-          </Link>
-          {post.publishedAt ? (
-            <span className='text-muted-foreground text-sm'>
-              {formatDate({ date: post.publishedAt, short: false })}
-            </span>
-          ) : null}
-        </div>
-
-        {(post.reactionsCount > 0 || post.commentsCount > 0) && (
-          <div className='text-muted-foreground mt-3 flex items-center gap-4 text-sm'>
-            {post.reactionsCount > 0 && (
-              <span className='flex items-center gap-1'>
-                <HeartIcon className='size-4' />
-                {post.reactionsCount} reactions
-              </span>
-            )}
-            {post.commentsCount > 0 && (
-              <span className='flex items-center gap-1'>
-                <CommentIcon className='size-4' />
-                {post.commentsCount} comments
-              </span>
-            )}
-          </div>
+        {post.subtitle && (
+          <p className='text-muted-foreground mt-3 text-lg'>{post.subtitle}</p>
         )}
 
-        {post.tags && post.tags.length > 0 ? (
-          <div className='mt-4 flex flex-row flex-wrap gap-2'>
+        <p className='text-muted-foreground mt-5 flex flex-wrap gap-x-2 gap-y-1 text-sm'>
+          {meta.map((item, index) => (
+            <span key={item} className='flex gap-2'>
+              {index > 0 && <span aria-hidden='true'>/</span>}
+              {item}
+            </span>
+          ))}
+        </p>
+
+        {post.tags && post.tags.length > 0 && (
+          <ul className='mt-4 flex flex-wrap gap-x-3 gap-y-1'>
             {post.tags.map(tag => (
-              <Badge
+              <li
                 key={tag.name}
-                variant='secondary'
-                className={'text-zinc-600 dark:text-zinc-300'}
+                className='text-muted-foreground font-mono text-xs'
               >
-                {tag.name}
-              </Badge>
+                #{tag.name}
+              </li>
             ))}
-          </div>
-        ) : null}
+          </ul>
+        )}
       </header>
 
-      <article className='prose dark:prose-invert mt-12 max-w-3xl'>
-        {content}
-      </article>
-
-      <div className='text-muted-foreground mt-10 flex items-center gap-4 text-sm font-medium'>
-        <div className='hover:text-foreground flex items-center gap-1 hover:transition'>
-          <ArrowUpRightIcon className='size-4' />
-          <a href={post.sourceUrl} target='_blank' rel='noreferrer noopener'>
-            View on {sourceName}
-          </a>
+      {post.coverImage && (
+        // fixed ratio box, so the page doesn't jump when the image arrives
+        <div className='border-border bg-muted relative mt-8 aspect-[1000/420] w-full overflow-hidden rounded-lg border'>
+          <Image
+            src={post.coverImage}
+            alt=''
+            fill
+            sizes='(max-width: 768px) 100vw, 720px'
+            className='object-cover'
+            preload
+            unoptimized={!canOptimizeImage(post.coverImage)}
+          />
         </div>
-      </div>
+      )}
+
+      <article className='prose mt-10 max-w-none'>{content}</article>
+      <BlogToc headings={toc} />
+
+      <p className='border-border text-muted-foreground mt-12 border-t pt-6 text-sm'>
+        Originally published on{' '}
+        <a
+          href={post.sourceUrl}
+          target='_blank'
+          rel='noreferrer noopener'
+          className='text-foreground inline-flex items-center gap-0.5 underline underline-offset-4'
+        >
+          {sourceName}
+          <ArrowUpRightIcon className='size-3.5' />
+        </a>
+        . Reactions and comments live there.
+      </p>
     </section>
   )
 }

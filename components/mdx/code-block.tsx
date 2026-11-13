@@ -46,7 +46,7 @@ export function CodeBlock({
           className='absolute right-2 top-2 z-10 rounded-md border border-border bg-muted/60 p-1.5 text-muted-foreground backdrop-blur transition hover:bg-muted hover:text-foreground'
         >
           {copied ? (
-            <CheckIcon className='size-4 text-green-500' />
+            <CheckIcon className='size-4 text-foreground' />
           ) : (
             <CopyIcon className='size-4' />
           )}

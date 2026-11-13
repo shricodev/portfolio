@@ -52,10 +52,8 @@ async function fetchRssItems(): Promise<TRssItem[]> {
     next: { revalidate: 3600 },
     signal: AbortSignal.timeout(FCC_REQUEST_TIMEOUT_MS),
   })
-  if (!res.ok) {
-    console.error('Failed to fetch freeCodeCamp RSS feed:', res.status)
-    return []
-  }
+  // throw so callers can tell "feed is down" apart from "no posts"
+  if (!res.ok) throw new Error(`freeCodeCamp RSS feed error: ${res.status}`)
   const xml = await res.text()
   const parsed = parser.parse(xml) as {
     rss?: { channel?: { item?: TRssItem | TRssItem[] } }
@@ -112,32 +110,26 @@ export async function getAllHashnodeFCCPosts(): Promise<TBlogCardMetadata[]> {
     .filter((c): c is TBlogCardMetadata => c !== null)
 }
 
+// Null means the post isn't in the feed. Feed failures throw (see fetchRssItems).
 export async function getHashnodeFCCPostBySlug(
   slug: string,
 ): Promise<TBlogPostDetail | null> {
-  try {
-    const items = await fetchRssItems()
-    const item = items.find(i => slugFromLink(text(i.link)) === slug)
-    if (!item) return null
+  const items = await fetchRssItems()
+  const item = items.find(i => slugFromLink(text(i.link)) === slug)
+  if (!item) return null
 
-    const card = itemToCardMetadata(item)
-    if (!card) return null
+  const card = itemToCardMetadata(item)
+  if (!card) return null
 
-    // Hashnode marks code blocks with a `lang-*` class, but rehype-pretty-code
-    // expects `language-*`, so normalize the prefix or the language (and its
-    // highlighting) gets dropped.
-    const html = text(item['content:encoded']).replace(
-      /(<code\b[^>]*\bclass=")lang-/gi,
-      '$1language-',
-    )
-    const markdown = html ? NodeHtmlMarkdown.translate(html) : ''
+  // Hashnode marks code blocks with a `lang-*` class, but rehype-pretty-code
+  // expects `language-*`, so fix the prefix or highlighting gets dropped.
+  const html = text(item['content:encoded']).replace(
+    /(<code\b[^>]*\bclass=")lang-/gi,
+    '$1language-',
+  )
 
-    return {
-      ...card,
-      content: { markdown },
-    }
-  } catch (error) {
-    console.error(`Failed to fetch freeCodeCamp post by slug: ${slug}`, error)
-    return null
+  return {
+    ...card,
+    content: { markdown: html ? NodeHtmlMarkdown.translate(html) : '' },
   }
 }

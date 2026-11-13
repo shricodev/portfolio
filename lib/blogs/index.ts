@@ -43,40 +43,7 @@ export const getAllBlogPosts = cache(
   },
 )
 
-/**
- * Get a paginated slice of all blog posts (merged from both sources).
- * When `all` is true, returns everything. Otherwise returns a single page.
- */
-export async function getBlogPostsCardMeta({
-  pageSize = 5,
-  page = 1,
-  all = false,
-}: {
-  pageSize?: number
-  page?: number
-  all?: boolean
-}): Promise<{ blogs: TBlogCardMetadata[] }> {
-  const allPosts = await getAllBlogPosts()
-
-  if (all) {
-    return { blogs: allPosts }
-  }
-
-  const start = (page - 1) * pageSize
-  return { blogs: allPosts.slice(start, start + pageSize) }
-}
-
-/**
- * Total count across both sources.
- */
-export async function getBlogPostsCount(): Promise<number> {
-  const allPosts = await getAllBlogPosts()
-  return allPosts.length
-}
-
-/**
- * All slugs for generateStaticParams (includes source prefix).
- */
+// Slugs for generateStaticParams (includes the source prefix).
 export async function getAllBlogPostSlugs(): Promise<{ slug: string }[]> {
   const allPosts = await getAllBlogPosts()
   return allPosts.map(post => ({

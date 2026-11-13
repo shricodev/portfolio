@@ -68,7 +68,7 @@ export function BlogToc({ headings }: { headings: TocItem[] }) {
           if (firstId) setActiveId(firstId)
         }
       },
-      { rootMargin: '-128px 0px -55% 0px', threshold: 0 },
+      { rootMargin: '-96px 0px -55% 0px', threshold: 0 },
     )
 
     targets.forEach(el => observer.observe(el))
@@ -90,11 +90,9 @@ export function BlogToc({ headings }: { headings: TocItem[] }) {
   return (
     <aside
       aria-label='Table of contents'
-      className='scrollbar-none hidden xl:fixed xl:top-32 xl:left-[calc(50%+400px)] xl:block xl:w-56 xl:max-h-[calc(100vh-10rem)] xl:overflow-y-auto'
+      className='scrollbar-none hidden xl:fixed xl:top-24 xl:left-[calc(50%+400px)] xl:block xl:w-56 xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto'
     >
-      <h2 className='mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground'>
-        On this page
-      </h2>
+      <p className='eyebrow mb-3'>On this page</p>
       <nav>
         <ul className='space-y-2'>
           {headings.map(h => (
@@ -121,9 +119,7 @@ export function BlogToc({ headings }: { headings: TocItem[] }) {
       </nav>
 
       <div className='mt-8 border-t border-border pt-6'>
-        <h2 className='mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground'>
-          Connect
-        </h2>
+        <p className='eyebrow mb-3'>Connect</p>
         <div className='flex items-center gap-5'>
           {CONNECT_LINKS.map(link => {
             const Icon = link.icon
@@ -133,7 +129,6 @@ export function BlogToc({ headings }: { headings: TocItem[] }) {
                 key={link.label}
                 label={link.label}
                 side='top'
-                className='text-xs'
               >
                 {link.external ? (
                   <a
