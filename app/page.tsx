@@ -1,18 +1,27 @@
-import { HeroIntro } from '@/components/hero-intro'
-import RecentBlogs from '@/components/recent-blogs'
-import RecentProjects from '@/components/recent-projects'
-import { Socials } from '@/components/socials'
+import Link from 'next/link'
+import { Hero } from '@/components/hero'
+import { SelectedWork } from '@/components/selected-work'
+import { getAllBlogPosts } from '@/lib/blogs'
 import {
   BASE_URL,
-  PAGE_INDEX_DEFAULT,
-  RECENT_BLOGS_DEFAULT,
-  RECENT_PROJECTS_DEFAULT,
+  PUBLIC_GMAIL,
+  SITE_DESCRIPTION,
+  SOCIAL_LINKS,
 } from '@/lib/constants'
-import { getBlogPostsCardMeta } from '@/lib/blogs'
-import { getProjectsMetadata } from '@/lib/projects'
-
-import type { Metadata } from 'next'
+import { getAllProjects, getFeaturedProjects, toListItem } from '@/lib/projects'
 import { serializeJsonLd } from '@/lib/utils'
+import { WORK } from '@/lib/work'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: BASE_URL },
+  openGraph: {
+    title: 'Shrijal Acharya',
+    description: SITE_DESCRIPTION,
+    url: BASE_URL,
+  },
+}
 
 const personJsonLd = {
   '@context': 'https://schema.org',
@@ -21,54 +30,48 @@ const personJsonLd = {
   url: BASE_URL,
   image: new URL('/images/shrijal-acharya.webp', BASE_URL).toString(),
   jobTitle: 'Developer Advocate and Software Engineer',
-  sameAs: [
-    'https://www.linkedin.com/in/iamshrijal',
-    'https://github.com/shricodev',
-    'https://dev.to/shricodev',
-    'https://x.com/shricodev',
-  ],
+  worksFor: { '@type': 'Organization', name: 'Composio' },
+  sameAs: SOCIAL_LINKS.filter(link => link.footer).map(link => link.href),
   knowsAbout: [
     'TypeScript',
     'Python',
     'Go',
-    'Cloud computing',
-    'DevOps',
     'AI agents',
+    'Developer tooling',
+    'DevOps',
+    'Cloud computing',
+    'Technical writing',
   ],
 }
 
-export function generateMetadata(): Metadata {
-  const baseMetadata = {
-    title: 'Shrijal Acharya',
-    description:
-      'Explore my selected software projects, technical writing, community work, and experience across web development, cloud, DevOps, and AI agents.',
-  }
+const STACK = [
+  { label: 'Languages', items: 'TypeScript, Python, Go' },
+  { label: 'AI', items: 'Agents, tool calling, MCP, LangGraph, Temporal' },
+  { label: 'Infra', items: 'Docker, Kubernetes, GCP, AWS, Ansible' },
+  { label: 'Web', items: 'Next.js, React, Node.js, PostgreSQL' },
+]
 
-  return {
-    ...baseMetadata,
-    alternates: {
-      canonical: new URL(BASE_URL).toString(),
-    },
-    openGraph: {
-      ...baseMetadata,
-      url: new URL(BASE_URL).toString(),
-    },
-    twitter: {
-      ...baseMetadata,
-      card: 'summary_large_image',
-    },
-  }
-}
+const FEATURED_COUNT = 5
+const RECENT_COUNT = 3
 
 export default async function Home() {
-  const { blogs } = await getBlogPostsCardMeta({
-    page: PAGE_INDEX_DEFAULT,
-    pageSize: RECENT_BLOGS_DEFAULT,
-  })
-  const recentProjects = getProjectsMetadata({
-    page: PAGE_INDEX_DEFAULT,
-    perPage: RECENT_PROJECTS_DEFAULT,
-  })
+  // if both feeds are down the page still renders, just without posts
+  const posts = await getAllBlogPosts().catch(() => [])
+
+  const allProjects = getAllProjects()
+  const featured = getFeaturedProjects().slice(0, FEATURED_COUNT)
+  const featuredNames = new Set(featured.map(project => project.title))
+  const recentProjects = allProjects
+    .filter(project => !featuredNames.has(project.title))
+    .slice(0, RECENT_COUNT)
+
+  const popularPosts = [...posts]
+    .sort((a, b) => b.reactionsCount - a.reactionsCount)
+    .slice(0, FEATURED_COUNT)
+  const popularIds = new Set(popularPosts.map(post => post.id))
+  const recentPosts = posts
+    .filter(post => !popularIds.has(post.id))
+    .slice(0, RECENT_COUNT)
 
   return (
     <>
@@ -76,13 +79,96 @@ export default async function Home() {
         type='application/ld+json'
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(personJsonLd) }}
       />
-      <HeroIntro />
 
-      <RecentBlogs blogPosts={blogs} />
+      <Hero postCount={posts.length} />
 
-      <RecentProjects projectsMeta={recentProjects} />
+      <SelectedWork
+        featuredProjects={featured.map(toListItem)}
+        recentProjects={recentProjects.map(toListItem)}
+        projectCount={allProjects.length}
+        popularPosts={popularPosts}
+        recentPosts={recentPosts}
+        postCount={posts.length}
+      />
 
-      <Socials />
+      <section aria-labelledby='experience' className='mt-20'>
+        <h2 id='experience' className='text-xl font-semibold tracking-tight'>
+          Experience
+        </h2>
+        <ul className='divide-border/60 mt-4 divide-y'>
+          {WORK.slice(0, 5).map(entry => (
+            <li
+              key={entry.org}
+              className='flex flex-col gap-0.5 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4'
+            >
+              <span className='text-[15px]'>
+                <span className='font-medium'>{entry.role}</span>
+                <span className='text-muted-foreground'>, {entry.org}</span>
+              </span>
+              <span className='text-muted-foreground shrink-0 font-mono text-xs'>
+                {entry.start} to {entry.end}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <Link
+          href='/work'
+          className='text-muted-foreground hover:text-foreground mt-5 inline-block text-sm underline underline-offset-4'
+        >
+          What I did in each role
+        </Link>
+      </section>
+
+      <section aria-labelledby='stack' className='mt-20'>
+        <h2 id='stack' className='text-xl font-semibold tracking-tight'>
+          Stack
+        </h2>
+        <dl className='mt-4 space-y-2.5'>
+          {STACK.map(group => (
+            <div key={group.label} className='flex gap-4 text-[15px]'>
+              <dt className='eyebrow w-24 shrink-0 pt-1'>{group.label}</dt>
+              <dd>{group.items}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section aria-labelledby='elsewhere' className='mt-20'>
+        <h2 id='elsewhere' className='text-xl font-semibold tracking-tight'>
+          Elsewhere
+        </h2>
+        <p className='text-muted-foreground mt-3 max-w-2xl leading-7'>
+          Open to full-time roles, freelance work, and collaborations. Email{' '}
+          <a
+            href={`mailto:${PUBLIC_GMAIL}`}
+            className='text-foreground underline underline-offset-4'
+          >
+            {PUBLIC_GMAIL}
+          </a>
+          , use the{' '}
+          <Link
+            href='/contact'
+            className='text-foreground underline underline-offset-4'
+          >
+            contact form
+          </Link>
+          , or find me here:
+        </p>
+        <ul className='mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm'>
+          {SOCIAL_LINKS.map(link => (
+            <li key={link.name}>
+              <a
+                href={link.href}
+                target='_blank'
+                rel='noreferrer noopener me'
+                className='text-muted-foreground hover:text-foreground underline-offset-4 hover:underline'
+              >
+                {link.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
     </>
   )
 }
