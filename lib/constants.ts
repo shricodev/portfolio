@@ -85,7 +85,27 @@ export const SOCIAL_LINKS = [
     footer: false,
   },
   { name: 'Hashnode', href: 'https://shricodev.hashnode.dev', footer: false },
+  {
+    name: 'Instagram',
+    href: 'https://instagram.com/itspiyush.ach',
+    footer: false,
+  },
   { name: 'LeetCode', href: 'https://leetcode.com/shricodev', footer: false },
+  {
+    name: 'GeeksForGeeks',
+    href: 'https://auth.geeksforgeeks.org/user/octopie23',
+    footer: false,
+  },
+  {
+    name: 'Coding Ninjas',
+    href: 'https://www.codingninjas.com/codestudio/profile/6d2f4a1b-5461-4e51-92fa-90f00f70f309',
+    footer: false,
+  },
+  {
+    name: 'Coursera',
+    href: 'https://www.coursera.org/user/6f7698d69fb4ee325093383f88d8d2ff',
+    footer: false,
+  },
   {
     name: 'Discord',
     href: 'https://discord.com/users/1082700727220183151',

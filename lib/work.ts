@@ -41,6 +41,7 @@ export const WORK: WorkEntry[] = [
   },
   {
     org: 'Studio1',
+    orgUrl: 'https://www.studio1hq.com/',
     role: 'Software Developer',
     type: 'Freelance',
     start: 'Oct 2024',
