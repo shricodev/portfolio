@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Contact } from '@/components/contact'
 import { BASE_URL, PUBLIC_GMAIL } from '@/lib/constants'
 import type { Metadata } from 'next'
@@ -5,32 +6,30 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Contact',
   description:
-    'Let’s connect! Whether you want to discuss a project, collaborate, or just say hi, feel free to reach out.',
+    'Get in touch with Shrijal Acharya about full-time roles, freelance work, or collaborations.',
   alternates: {
     canonical: new URL('/contact', BASE_URL).toString(),
   },
 }
 
 export default function Page() {
+  const linkClass = 'text-foreground underline underline-offset-4'
+
   return (
     <section>
       <h1 className='title'>Get in touch</h1>
-      <div className='prose max-w-full'>
-        <p className='font-medium text-zinc-800 dark:text-zinc-300'>
-          I’m open to full-time work, freelance and collaborations. Let’s
-          connect if you have a project, ideas to discuss, or just want to chat!
-        </p>
-        <p className='text-muted-foreground font-medium text-zinc-800 dark:text-zinc-300'>
-          Feel free to reach out to me at{' '}
-          <a
-            href={`mailto:${PUBLIC_GMAIL}`}
-            className='text-muted-foreground hover:text-foreground font-medium underline underline-offset-4 hover:transition'
-          >
-            {PUBLIC_GMAIL}
-          </a>{' '}
-          or through the contact form below.
-        </p>
-      </div>
+      <p className='lede'>
+        I am open to full-time roles, freelance work, and collaborations. Use
+        the form, email{' '}
+        <a href={`mailto:${PUBLIC_GMAIL}`} className={linkClass}>
+          {PUBLIC_GMAIL}
+        </a>
+        , or{' '}
+        <Link href='/meet' className={linkClass}>
+          book a 30 minute call
+        </Link>
+        .
+      </p>
 
       <Contact />
     </section>

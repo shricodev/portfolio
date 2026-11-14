@@ -3,7 +3,7 @@
 import { ContactFormEmailTemplate } from '@/components/contact-email-template'
 import {
   ContactFormSchema,
-  TContactFormSchema,
+  type TContactFormSchema,
 } from '@/lib/validators/contact-form'
 import { Resend } from 'resend'
 import { env } from '@/lib/env'
@@ -16,12 +16,13 @@ const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
 const RATE_LIMIT_MAX_REQUESTS = 5
 const rateLimitStore = new Map<string, number[]>()
 
-type TResponse = {
-  error: { message: string } | null
-  success: boolean
+export type ContactFormState = {
+  status: 'idle' | 'success' | 'error'
+  message?: string
+  fieldErrors?: Partial<Record<'name' | 'email' | 'message', string>>
+  // echoed back so a failed submit doesn't wipe what was typed
+  values?: { name: string; email: string; message: string }
 }
-
-type TSendEmailResponse = TResponse
 
 async function sendEmailResend(data: TContactFormSchema) {
   const senderEmail = env.RESEND_FROM_EMAIL
@@ -84,42 +85,60 @@ async function getRequestIdentity(): Promise<string | null> {
   )
 }
 
-export async function sendEmail(
-  data: TContactFormSchema,
-): Promise<TSendEmailResponse> {
-  const requestIdentity = await getRequestIdentity()
-  if (!requestIdentity) {
-    return { success: false, error: { message: 'Request rejected.' } }
-  }
+function field(formData: FormData, key: string): string {
+  const value = formData.get(key)
+  return typeof value === 'string' ? value : ''
+}
 
-  if (isRateLimited(requestIdentity)) {
+export async function submitContactForm(
+  _previous: ContactFormState,
+  formData: FormData,
+): Promise<ContactFormState> {
+  const values = {
+    name: field(formData, 'name'),
+    email: field(formData, 'email'),
+    message: field(formData, 'message'),
+  }
+  const fail = (message: string): ContactFormState => ({
+    status: 'error',
+    message,
+    values,
+  })
+
+  // Bots fill the hidden field. Tell them it worked and send nothing.
+  if (field(formData, 'website')) return { status: 'success' }
+
+  const parsed = ContactFormSchema.safeParse(values)
+  if (!parsed.success) {
+    const errors = parsed.error.flatten().fieldErrors
     return {
-      success: false,
-      error: { message: 'Too many requests. Please try again later.' },
+      status: 'error',
+      message: 'Please fix the highlighted fields.',
+      fieldErrors: {
+        name: errors.name?.[0],
+        email: errors.email?.[0],
+        message: errors.message?.[0],
+      },
+      values,
     }
   }
 
-  const validatedResponse = ContactFormSchema.safeParse(data)
-  if (!validatedResponse.success) {
-    return { error: { message: 'Invalid form submission.' }, success: false }
+  const requestIdentity = await getRequestIdentity()
+  if (!requestIdentity) return fail('Request rejected.')
+
+  if (isRateLimited(requestIdentity)) {
+    return fail('Too many messages in a short time. Please try again later.')
   }
 
   try {
-    const { data: resendData, error: resendError } = await sendEmailResend(
-      validatedResponse.data,
-    )
-
-    if (!resendData || resendError) {
-      console.error('Resend rejected contact-form email:', resendError)
-      return { success: false, error: { message: 'Unable to send message.' } }
+    const { data, error } = await sendEmailResend(parsed.data)
+    if (!data || error) {
+      console.error('Resend rejected contact-form email:', error)
+      return fail('The message could not be sent. Please email me instead.')
     }
-
-    return { success: true, error: null }
+    return { status: 'success' }
   } catch (error) {
     console.error('Contact-form email failed:', error)
-    return {
-      success: false,
-      error: { message: 'Unable to send message.' },
-    }
+    return fail('The message could not be sent. Please email me instead.')
   }
 }
