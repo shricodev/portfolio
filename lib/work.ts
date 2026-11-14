@@ -82,7 +82,7 @@ export const WORK: WorkEntry[] = [
       'Articles reach a global audience of millions of developers.',
     ],
     links: [
-      { label: 'freeCodeCamp articles', href: '/blogs?source=freecodecamp' },
+      { label: 'freeCodeCamp articles', href: '/blogs?source=freecodecamp&sort=newest' },
     ],
   },
   {
@@ -99,7 +99,7 @@ export const WORK: WorkEntry[] = [
       'Grew a following of 6,500+ readers.',
       'Featured multiple times among the authors of the week.',
     ],
-    links: [{ label: 'Articles on DEV', href: '/blogs?source=devto' }],
+    links: [{ label: 'Articles on DEV', href: '/blogs?source=devto&sort=newest' }],
   },
   {
     org: 'Microsoft',
