@@ -77,7 +77,9 @@ export async function GET() {
 
   return new Response(feed.xml({ indent: true }), {
     headers: {
-      'Content-Type': 'application/rss+xml; charset=utf-8',
+      // application/rss+xml makes browsers download the file instead of
+      // showing it. Feed readers are happy with plain XML.
+      'Content-Type': 'application/xml; charset=utf-8',
       'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
     },
   })
