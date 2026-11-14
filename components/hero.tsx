@@ -60,9 +60,9 @@ export function Hero({ postCount }: { postCount: number }) {
           developers can follow along and build on it.
         </p>
         <p>
-          I also write for freeCodeCamp and DEV, run community workshops as a
-          Microsoft Gold Student Ambassador, and spent three years leading a
-          development team at Oppia Foundation. And yes, I use Vim and Arch,
+          I also write for freeCodeCamp and DEV. Earlier, I led a development
+          team at Oppia Foundation for three years and ran community workshops
+          as a Microsoft Gold Student Ambassador. And yes, I use Vim and Arch,
           btw.
         </p>
       </div>

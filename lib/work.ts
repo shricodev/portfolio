@@ -107,13 +107,13 @@ export const WORK: WorkEntry[] = [
     role: 'Gold Student Ambassador',
     type: 'Community',
     start: 'Apr 2024',
-    end: 'Present',
+    end: 'Jul 2026',
     summary:
-      'As a Microsoft Learn Student Ambassador, I help students learn new technologies and build with the developer community.',
+      'As a Microsoft Student Ambassador, I helped students learn new technologies, ran workshops, and built projects with the developer community.',
     highlights: [
-      'Run workshops and mentor students.',
-      'Build projects and share Microsoft tools with the community.',
-      'Promoted to Gold tier in August 2025.',
+      'Ran workshops and mentored students who wanted to grow their skills.',
+      'Shared Microsoft tools and built projects together with the community.',
+      'Joined in April 2024 and was promoted to the Gold tier in August 2025.',
     ],
     links: [{ label: 'Events I have run', href: '/events' }],
   },

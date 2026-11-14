@@ -54,7 +54,7 @@
   --destructive-foreground: 0 0% 98%;
   --border: 0 0% 90%;
   --input: 0 0% 85%;
-  --ring: 0 0% 9%;
+  --ring: 0 0% 45%;
   --radius: 0.5rem;
 }
 
@@ -77,7 +77,7 @@
   --destructive-foreground: 0 0% 98%;
   --border: 0 0% 15%;
   --input: 0 0% 20%;
-  --ring: 0 0% 80%;
+  --ring: 0 0% 50%;
 }
 
 [data-rmiz-modal-overlay='visible'] {
@@ -102,8 +102,9 @@
     @apply bg-background text-foreground font-sans;
   }
   /* one focus style for everything */
+  /* keyboard focus only, a thin quiet outline rather than a heavy ring */
   :focus-visible {
-    @apply outline-ring outline-2 outline-offset-2;
+    @apply outline-ring rounded-sm outline-1 outline-offset-4;
   }
 
   .title {
@@ -144,7 +145,7 @@
 
 .prose :is(h1, h2, h3, h4, h5, h6) {
   @apply font-semibold tracking-tight;
-  scroll-margin-top: 5.5rem;
+  scroll-margin-top: 6rem;
 }
 .prose h2 {
   @apply border-border mt-12 border-b pb-2;
