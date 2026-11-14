@@ -1,246 +1,111 @@
-import { CustomHoverCard } from '@/components/custom-hover-card'
-import { Separator } from '@/components/ui/separator'
+import Link from 'next/link'
+import { ArrowUpRightIcon } from '@/components/icons'
 import { BASE_URL } from '@/lib/constants'
+import { WORK, type WorkLink } from '@/lib/work'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Work',
   description:
-    "Take a look at my professional journey, projects I've worked on, and my involvement with the community.",
+    'Where Shrijal Acharya has worked: developer advocacy at Composio, freelance engineering, technical writing for freeCodeCamp, and open-source leadership at Oppia.',
   alternates: {
     canonical: new URL('/work', BASE_URL).toString(),
   },
 }
 
+function RelatedLink({ link }: { link: WorkLink }) {
+  const className =
+    'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground inline-flex items-center gap-1 rounded-md border px-2.5 py-1 font-mono text-xs transition-colors'
+
+  if (link.href.startsWith('/')) {
+    return (
+      <Link href={link.href} className={className}>
+        {link.label}
+      </Link>
+    )
+  }
+  return (
+    <a
+      href={link.href}
+      target='_blank'
+      rel='noreferrer noopener'
+      className={className}
+    >
+      {link.label}
+      <ArrowUpRightIcon className='size-3' />
+    </a>
+  )
+}
+
 export default function Page() {
   return (
-    <>
-      <section className='relative flex flex-col justify-center'>
-        <h1 className='title'>Work</h1>
+    <section>
+      <h1 className='title'>Work</h1>
+      <p className='lede'>
+        Software engineering, developer advocacy, technical writing, and
+        open-source leadership, across startups, foundations, and global
+        programs. Each role links to what came out of it.
+      </p>
 
-        <div className='prose max-w-full'>
-          <p className='font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
-            I&apos;ve worked across software development, developer advocacy,
-            open-source leadership, and technical writing with startups,
-            foundations, and global programs. Here&apos;s a summary of my work
-            so far.
-          </p>
-        </div>
+      <ol className='mt-12'>
+        {WORK.map(entry => (
+          <li
+            key={entry.org}
+            className='border-border grid gap-x-8 gap-y-3 border-t py-8 sm:grid-cols-[9.5rem_1fr]'
+          >
+            <div className='text-muted-foreground font-mono text-xs leading-6'>
+              <p>
+                {entry.start} to {entry.end}
+              </p>
+              {entry.type && <p>{entry.type}</p>}
+            </div>
 
-        <Separator className='my-6' />
+            <article>
+              <h2 className='text-lg leading-snug font-semibold tracking-tight'>
+                {entry.role}
+              </h2>
+              <p className='text-muted-foreground mt-0.5 text-sm'>
+                {entry.orgUrl ? (
+                  <a
+                    href={entry.orgUrl}
+                    target='_blank'
+                    rel='noreferrer noopener'
+                    className='hover:text-foreground inline-flex items-center gap-0.5 underline underline-offset-4'
+                  >
+                    {entry.org}
+                    <ArrowUpRightIcon className='size-3.5' />
+                  </a>
+                ) : (
+                  entry.org
+                )}
+              </p>
 
-        <div className='space-y-14'>
-          {/* Composio */}
-          <article>
-            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
-              Composio
-            </h2>
-            <div className='mb-4 flex items-center gap-2 text-sm'>
-              <span className='text-zinc-600 dark:text-zinc-300'>
-                Developer Advocate
-              </span>
-              <span className='text-muted-foreground'>·</span>
-              <time className='text-muted-foreground'>Feb 2025 - Present</time>
-            </div>
-            <div className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
-              <span>At</span>
-              <CustomHoverCard
-                triggerText='Composio'
-                title='Composio'
-                description='A platform that enables AI agents to interact with 250+ external tools and services.'
-                dateText='Joined February 2025'
-                avatarSrc=''
-                avatarFallback='CO'
-              />
-              <span>
-                I build hands-on AI agent projects and create developer-focused
-                content that helps others learn and ship with AI tooling.
-              </span>
-              <ul className='mt-4 list-disc space-y-1 pl-5 font-medium text-pretty text-zinc-900 dark:text-zinc-200'>
-                <li>Build end-to-end AI agent projects and working demos.</li>
-                <li>
-                  Write tutorials, integration guides, and technical
-                  walkthroughs.
-                </li>
-                <li>All content published on the Composio authors page.</li>
-              </ul>
-            </div>
-          </article>
+              <p className='mt-4 leading-7'>{entry.summary}</p>
 
-          {/* Studio1 */}
-          <article>
-            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
-              Studio1
-            </h2>
-            <div className='mb-4 flex items-center gap-2 text-sm'>
-              <span className='text-zinc-600 dark:text-zinc-300'>
-                Software Developer · Freelance
-              </span>
-              <span className='text-muted-foreground'>·</span>
-              <time className='text-muted-foreground'>Oct 2024 - Present</time>
-            </div>
-            <div className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
-              <span>At</span>
-              <CustomHoverCard
-                triggerText='Studio1'
-                title='Studio1'
-                description='A technical content and developer advocacy agency helping startups and devtool companies scale.'
-                dateText='Joined October 2024'
-                avatarSrc=''
-                avatarFallback='S1'
-              />
-              <span>
-                I build full-stack and AI-powered applications, and write
-                detailed implementation guides for each project I ship.
-              </span>
-              <ul className='mt-4 list-disc space-y-1 pl-5 font-medium text-pretty text-zinc-900 dark:text-zinc-200'>
-                <li>
-                  Built an AI chatbot that lets users chat with a Notion
-                  database.
-                </li>
-                <li>
-                  Built a real-time Kanban board with localization and
-                  AI-generated item descriptions.
-                </li>
-                <li>
-                  Write step-by-step blog posts and setup guides for each
-                  project.
-                </li>
-              </ul>
-            </div>
-          </article>
+              {entry.highlights.length > 0 && (
+                <ul className='text-muted-foreground marker:text-muted-foreground/50 mt-3 list-disc space-y-1.5 pl-5 text-[15px] leading-6'>
+                  {entry.highlights.map(highlight => (
+                    <li key={highlight}>{highlight}</li>
+                  ))}
+                </ul>
+              )}
 
-          {/* freeCodeCamp */}
-          <article>
-            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
-              freeCodeCamp
-            </h2>
-            <div className='mb-4 flex items-center gap-2 text-sm'>
-              <span className='text-zinc-600 dark:text-zinc-300'>
-                Technical Writer
-              </span>
-              <span className='text-muted-foreground'>·</span>
-              <time className='text-muted-foreground'>Apr 2024 - Present</time>
-            </div>
-            <div className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
-              <span>At</span>
-              <CustomHoverCard
-                triggerText='freeCodeCamp'
-                title='freeCodeCamp'
-                description='A nonprofit community that helps millions of people learn to code for free.'
-                dateText='Joined April 2024'
-                avatarSrc='/images/freeCodeCamp.svg'
-                avatarFallback='fCC'
-              />
-              <span>
-                I write in-depth technical articles and tutorials for one of the
-                largest developer communities on the web.
-              </span>
-              <ul className='mt-4 list-disc space-y-1 pl-5 font-medium text-pretty text-zinc-900 dark:text-zinc-200'>
-                <li>
-                  Cover topics across full-stack development, AI, and DevOps.
-                </li>
-                <li>
-                  Articles reach a global audience of millions of developers.
-                </li>
-              </ul>
-            </div>
-          </article>
-
-          {/* Oppia Foundation */}
-          <article>
-            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
-              Oppia Foundation
-            </h2>
-            <div className='mb-4 flex items-center gap-2 text-sm'>
-              <span className='text-zinc-600 dark:text-zinc-300'>
-                Development Team Lead
-              </span>
-              <span className='text-muted-foreground'>·</span>
-              <time className='text-muted-foreground'>May 2023 - Present</time>
-            </div>
-            <div className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
-              <span>At</span>
-              <CustomHoverCard
-                triggerText='Oppia Foundation'
-                title='Oppia Foundation'
-                description='An open-source platform that provides quality education to those who lack access to it.'
-                dateText='Joined May 2023'
-                avatarSrc='/images/oppia.svg'
-                avatarFallback='OP'
-              />
-              <span>
-                I lead the Dev Workflow and Welfare team, focused on improving
-                developer experience across the project.
-              </span>
-              <ul className='mt-4 list-disc space-y-1 pl-5 font-medium text-pretty text-zinc-900 dark:text-zinc-200'>
-                <li>
-                  Contribute code to the LaCE team, building and maintaining
-                  onboarding for new contributors.
-                </li>
-                <li>
-                  Collaborate with the Contributor Dashboard team on the
-                  full-stack contribution management app.
-                </li>
-              </ul>
-            </div>
-          </article>
-
-          {/* Microsoft */}
-          <article>
-            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
-              Microsoft
-            </h2>
-            <div className='mb-4 flex items-center gap-2 text-sm'>
-              <span className='text-zinc-600 dark:text-zinc-300'>
-                Gold Student Ambassador
-              </span>
-              <span className='text-muted-foreground'>·</span>
-              <time className='text-muted-foreground'>Apr 2024 - Present</time>
-            </div>
-            <div className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
-              <span>As a</span>
-              <CustomHoverCard
-                triggerText='Microsoft'
-                title='Microsoft Learn Student Ambassador'
-                description='Global group of campus leaders who are eager to help fellow students, lead in their tech community.'
-                dateText='Joined April 2024'
-                avatarSrc='/images/microsoft.svg'
-                avatarFallback='MS'
-              />
-              <span>
-                Learn Student Ambassador, I help students learn new technologies
-                and build with the developer community.
-              </span>
-              <ul className='mt-4 list-disc space-y-1 pl-5 font-medium text-pretty text-zinc-900 dark:text-zinc-200'>
-                <li>Run workshops and mentor students.</li>
-                <li>
-                  Build projects and share Microsoft tools with the community.
-                </li>
-                <li>Promoted to Gold tier in August 2025.</li>
-              </ul>
-            </div>
-          </article>
-
-          {/* GirlScript Summer of Code */}
-          <article>
-            <h2 className='dark:text-foreground mb-2 text-lg font-semibold text-zinc-900'>
-              GirlScript Summer of Code
-            </h2>
-            <div className='mb-4 flex items-center gap-2 text-sm'>
-              <span className='text-zinc-600 dark:text-zinc-300'>
-                Individual Contributor
-              </span>
-              <span className='text-muted-foreground'>·</span>
-              <time className='text-muted-foreground'>May 2024 - Jul 2024</time>
-            </div>
-            <p className='leading-relaxed font-medium text-pretty text-zinc-800 dark:text-zinc-300'>
-              Contributed to open-source projects during this three-month
-              program, working under mentor guidance on real-world codebases.
-            </p>
-          </article>
-        </div>
-      </section>
-    </>
+              {entry.links && entry.links.length > 0 && (
+                <div className='mt-5'>
+                  <p className='eyebrow mb-2'>Related</p>
+                  <ul className='flex flex-wrap gap-2'>
+                    {entry.links.map(link => (
+                      <li key={link.href}>
+                        <RelatedLink link={link} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </article>
+          </li>
+        ))}
+      </ol>
+    </section>
   )
 }

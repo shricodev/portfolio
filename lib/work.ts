@@ -1,0 +1,123 @@
+export type WorkLink = { label: string; href: string }
+
+export type WorkEntry = {
+  org: string
+  orgUrl?: string
+  role: string
+  type?: string
+  start: string
+  end: string
+  summary: string
+  highlights: string[]
+  // internal or external pointers to the actual output
+  links?: WorkLink[]
+}
+
+export const WORK: WorkEntry[] = [
+  {
+    org: 'Composio',
+    orgUrl: 'https://composio.dev',
+    role: 'Developer Advocate',
+    start: 'Feb 2025',
+    end: 'Present',
+    summary:
+      'I build hands-on AI agent projects on top of Composio, a platform that connects agents to external tools and services, and write the content that helps other developers ship with it.',
+    highlights: [
+      'Build end-to-end AI agent projects and working demos.',
+      'Write tutorials, integration guides, and technical walkthroughs.',
+    ],
+    links: [
+      { label: 'kron-k8s-agent', href: '/projects/kron-k8s-agent' },
+      {
+        label: 'durable-agent-in-the-loop',
+        href: '/projects/durable-agent-in-the-loop',
+      },
+      {
+        label: 'chat-nextjs-mcp-client',
+        href: '/projects/chat-nextjs-mcp-client',
+      },
+      { label: 'Articles on DEV', href: '/blogs?source=devto' },
+    ],
+  },
+  {
+    org: 'Studio1',
+    role: 'Software Developer',
+    type: 'Freelance',
+    start: 'Oct 2024',
+    end: 'Present',
+    summary:
+      'Studio1 is a technical content and developer advocacy agency for startups and devtool companies. I build full-stack and AI-powered applications there and write a detailed implementation guide for each one.',
+    highlights: [
+      'Built an AI chatbot that lets users chat with a Notion database.',
+      'Built a real-time Kanban board with localization and AI-generated item descriptions.',
+      'Write step-by-step blog posts and setup guides for each project.',
+    ],
+    links: [
+      {
+        label: 'copilotkit-with-notion-api',
+        href: '/projects/copilotkit-with-notion-api',
+      },
+      {
+        label: 'kanban-ai-realtime-localization',
+        href: '/projects/kanban-ai-realtime-localization',
+      },
+    ],
+  },
+  {
+    org: 'freeCodeCamp',
+    orgUrl: 'https://www.freecodecamp.org/news/author/shricodev/',
+    role: 'Technical Writer',
+    start: 'Apr 2024',
+    end: 'Present',
+    summary:
+      'I write in-depth technical articles and tutorials for one of the largest developer communities on the web.',
+    highlights: [
+      'Cover topics across full-stack development, AI, and DevOps.',
+      'Articles reach a global audience of millions of developers.',
+    ],
+    links: [
+      { label: 'freeCodeCamp articles', href: '/blogs?source=freecodecamp' },
+    ],
+  },
+  {
+    org: 'Oppia Foundation',
+    orgUrl: 'https://www.oppia.org',
+    role: 'Development Team Lead',
+    type: 'Open source',
+    start: 'May 2023',
+    end: 'Present',
+    summary:
+      'Oppia is an open-source platform that brings quality education to people who lack access to it. I lead the Dev Workflow and Welfare team, focused on developer experience across the project.',
+    highlights: [
+      'Contribute code to the LaCE team, building and maintaining onboarding for new contributors.',
+      'Collaborate with the Contributor Dashboard team on the full-stack contribution management app.',
+    ],
+    links: [{ label: 'oppia/oppia', href: 'https://github.com/oppia/oppia' }],
+  },
+  {
+    org: 'Microsoft',
+    orgUrl: 'https://mvp.microsoft.com/studentambassadors',
+    role: 'Gold Student Ambassador',
+    type: 'Community',
+    start: 'Apr 2024',
+    end: 'Present',
+    summary:
+      'As a Microsoft Learn Student Ambassador, I help students learn new technologies and build with the developer community.',
+    highlights: [
+      'Run workshops and mentor students.',
+      'Build projects and share Microsoft tools with the community.',
+      'Promoted to Gold tier in August 2025.',
+    ],
+    links: [{ label: 'Events I have run', href: '/events' }],
+  },
+  {
+    org: 'GirlScript Summer of Code',
+    role: 'Individual Contributor',
+    type: 'Open source',
+    start: 'May 2024',
+    end: 'Jul 2024',
+    summary:
+      'Contributed to open-source projects during this three-month program, working under mentor guidance on real-world codebases.',
+    highlights: [],
+  },
+]
