@@ -54,6 +54,23 @@ export const FEATURED_PROJECTS = [
   'dotfiles',
 ]
 
+// Personal favorites: the more technical how-to posts, in display order.
+// Each entry is the slug from the /blogs/<slug> URL on this site.
+export const FEATURED_POSTS = [
+  'hashnode--how-to-build-a-durable-autoscaling-ai-agent-with-temporal-composio-keda-and-kubernetes',
+  'devto--how-to-build-and-deploy-an-mcp-server-to-production-2026-07-28-spec-50p3',
+  'hashnode--build-your-own-ai-app-builder-with-next-js-aws-and-sandboxes',
+  'devto--build-your-own-chat-mcp-client-with-nextjs-4a0k',
+  'devto--my-speaker-broke-so-i-built-a-lan-speaker-19nc',
+  'hashnode--build-a-langgraph-composio-powered-discord-bot',
+  'devto--build-your-personal-siri-with-llama-3-like-a-pro-5h1o',
+  'hashnode--host-llms-locally-in-docker-on-azure',
+  'devto--build-your-own-personal-voice-ai-agent-to-control-all-your-apps-2dfa',
+  'devto--how-i-manage-my-system-and-dotfiles-with-ansible-8m1',
+  'devto--automate-your-instagram-posts-like-a-pro-with-cron-jobs-3idb',
+  'devto--build-your-own-cli-version-of-monkeytype-bm7',
+]
+
 export const ROUTES = [
   '',
   '/blogs',
@@ -87,7 +104,7 @@ export const SOCIAL_LINKS = [
   { name: 'Hashnode', href: 'https://shricodev.hashnode.dev', footer: false },
   {
     name: 'Instagram',
-    href: 'https://instagram.com/itspiyush.ach',
+    href: 'https://instagram.com/justpiyush.ach',
     footer: false,
   },
   { name: 'LeetCode', href: 'https://leetcode.com/shricodev', footer: false },

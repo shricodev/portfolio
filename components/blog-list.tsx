@@ -3,7 +3,11 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { TBlogCardMetadata } from '@/types/blogs'
-import { PostRow } from '@/components/post-row'
+import { IndexRow } from '@/components/index-row'
+import { PostRow, SOURCE_LABELS } from '@/components/post-row'
+import { getFeaturedPosts } from '@/lib/blogs/featured'
+import { encodeSourceSlug } from '@/lib/blogs/slug'
+import { formatDate } from '@/lib/utils'
 import {
   EmptyState,
   SearchInput,
@@ -89,6 +93,7 @@ export function BlogList({
   }, [posts, query, source, sort])
 
   const isFiltered = query.trim() !== '' || source !== 'all'
+  const picks = useMemo(() => getFeaturedPosts(posts), [posts])
 
   return (
     <div>
@@ -115,15 +120,37 @@ export function BlogList({
         </div>
       </div>
 
-      <p
-        className='text-muted-foreground mt-4 text-xs'
+      {!isFiltered && picks.length > 0 && (
+        <section aria-labelledby='picks-heading' className='mt-10'>
+          <h2 id='picks-heading' className='eyebrow'>
+            Personal favorites
+          </h2>
+          <p className='text-muted-foreground mt-1.5 mb-1 text-sm'>
+            The hands-on builds and how-to guides I would point you to first.
+          </p>
+          <ol className='divide-border/60 divide-y'>
+            {picks.map((post, index) => (
+              <IndexRow
+                key={`${post.source}_${post.slug}`}
+                number={index + 1}
+                href={`/blogs/${encodeSourceSlug(post.source, post.slug)}`}
+                title={post.title}
+                meta={`${SOURCE_LABELS[post.source]} / ${formatDate(post.publishedAt, 'short')}`}
+              />
+            ))}
+          </ol>
+        </section>
+      )}
+
+      <h2
+        className='eyebrow mt-10'
         role='status'
         aria-live='polite'
       >
         {isFiltered
           ? `${filtered.length} of ${posts.length} posts`
-          : `${posts.length} posts`}
-      </p>
+          : `All posts, ${sort === 'popular' ? 'most popular' : 'newest'} first (${posts.length})`}
+      </h2>
 
       {filtered.length === 0 ? (
         <div className='mt-6'>

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Hero } from '@/components/hero'
 import { SelectedWork } from '@/components/selected-work'
 import { getAllBlogPosts } from '@/lib/blogs'
+import { getFeaturedPosts } from '@/lib/blogs/featured'
 import {
   BASE_URL,
   PUBLIC_GMAIL,
@@ -58,12 +59,16 @@ export default async function Home() {
     .filter(project => !featuredNames.has(project.title))
     .slice(0, RECENT_COUNT)
 
+  // writing: my picks first, then what readers liked, then what's new
+  const pickedPosts = getFeaturedPosts(posts).slice(0, FEATURED_COUNT)
+  const shown = new Set(pickedPosts.map(post => post.id))
   const popularPosts = [...posts]
+    .filter(post => !shown.has(post.id))
     .sort((a, b) => b.reactionsCount - a.reactionsCount)
-    .slice(0, FEATURED_COUNT)
-  const popularIds = new Set(popularPosts.map(post => post.id))
+    .slice(0, RECENT_COUNT)
+  popularPosts.forEach(post => shown.add(post.id))
   const recentPosts = posts
-    .filter(post => !popularIds.has(post.id))
+    .filter(post => !shown.has(post.id))
     .slice(0, RECENT_COUNT)
 
   return (
@@ -79,6 +84,7 @@ export default async function Home() {
         featuredProjects={featured.map(toListItem)}
         recentProjects={recentProjects.map(toListItem)}
         projectCount={allProjects.length}
+        pickedPosts={pickedPosts}
         popularPosts={popularPosts}
         recentPosts={recentPosts}
         postCount={posts.length}
