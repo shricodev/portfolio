@@ -1,51 +1,7 @@
-import type { ReactNode } from 'react'
 import Image from 'next/image'
-import { LinkedInIcon } from '@/components/icons'
-import { Separator } from '@/components/ui/separator'
+import { ArrowUpRightIcon } from '@/components/icons'
 import { formatDate } from '@/lib/utils'
-import { cn } from '@/lib/utils'
-import type { EventItem, EventPlatform } from '@/lib/events'
-
-type PlatformMeta = {
-  label: string
-  icon: ReactNode
-  badgeClass: string
-  viewLabel: string
-}
-
-const PLATFORM_META: Record<EventPlatform, PlatformMeta> = {
-  linkedin: {
-    label: 'LinkedIn',
-    icon: <LinkedInIcon className='size-3.5' aria-hidden='true' />,
-    badgeClass:
-      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-    viewLabel: 'View on LinkedIn',
-  },
-}
-
-function getPlatformMeta(platform: EventPlatform): PlatformMeta {
-  return PLATFORM_META[platform]
-}
-
-function ExternalLinkIcon() {
-  return (
-    <svg
-      xmlns='http://www.w3.org/2000/svg'
-      viewBox='0 0 24 24'
-      fill='none'
-      stroke='currentColor'
-      strokeWidth='2'
-      strokeLinecap='round'
-      strokeLinejoin='round'
-      className='size-3.5'
-      aria-hidden='true'
-    >
-      <path d='M15 3h6v6' />
-      <path d='M10 14 21 3' />
-      <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
-    </svg>
-  )
-}
+import type { EventItem } from '@/lib/events'
 
 interface EventCardProps {
   event: EventItem
@@ -53,71 +9,48 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, preload = false }: EventCardProps) {
-  const meta = getPlatformMeta(event.platform)
-  const formattedDate = formatDate({ date: event.date, short: true })
-
   return (
-    <article className='border-border flex flex-col gap-4 rounded-lg border bg-zinc-50 p-6 dark:bg-zinc-900'>
-      <div className='flex items-start justify-between gap-3'>
-        <span
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium',
-            meta.badgeClass,
-          )}
-        >
-          {meta.icon}
-          {meta.label}
-        </span>
-        {formattedDate && (
-          <time dateTime={event.date} className='text-muted-foreground text-xs'>
-            {formattedDate}
-          </time>
-        )}
-      </div>
-
-      <div>
-        <a
-          href={event.postUrl}
-          target='_blank'
-          rel='noopener noreferrer'
-          className='text-foreground text-lg font-semibold hover:underline hover:underline-offset-4'
-        >
-          <h2>{event.title}</h2>
-        </a>
-        <p className='text-muted-foreground mt-1 text-sm'>
-          {event.description}
-        </p>
-      </div>
-
-      <Separator />
-
+    <article className='border-border bg-card overflow-hidden rounded-lg border'>
       <a
         href={event.postUrl}
         target='_blank'
         rel='noopener noreferrer'
-        aria-label={`${meta.viewLabel}: ${event.title}`}
-        className='group border-border block overflow-hidden rounded-md border bg-zinc-100 dark:bg-zinc-950'
+        tabIndex={-1}
+        aria-hidden='true'
+        className='border-border bg-muted block border-b'
       >
         <Image
           src={event.image.src}
           alt={event.image.alt}
           width={event.image.width}
           height={event.image.height}
-          sizes='(max-width: 768px) 100vw, 736px'
+          sizes='(max-width: 768px) 100vw, 720px'
           preload={preload}
-          className='h-auto w-full transition-transform duration-200 group-hover:scale-[1.01]'
+          className='h-auto w-full'
         />
       </a>
-
-      <a
-        href={event.postUrl}
-        target='_blank'
-        rel='noopener noreferrer'
-        className='text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm transition-colors duration-150'
-      >
-        {meta.viewLabel}
-        <ExternalLinkIcon />
-      </a>
+      <div className='p-5'>
+        <time
+          dateTime={event.date}
+          className='text-muted-foreground font-mono text-xs'
+        >
+          {formatDate(event.date, 'short')}
+        </time>
+        <h2 className='mt-1.5 text-base font-medium'>{event.title}</h2>
+        <p className='text-muted-foreground mt-1.5 text-sm leading-6'>
+          {event.description}
+        </p>
+        <a
+          href={event.postUrl}
+          target='_blank'
+          rel='noopener noreferrer'
+          aria-label={`View ${event.title} on LinkedIn`}
+          className='text-muted-foreground hover:text-foreground mt-4 inline-flex items-center gap-1 text-sm'
+        >
+          View on LinkedIn
+          <ArrowUpRightIcon className='size-3.5' />
+        </a>
+      </div>
     </article>
   )
 }

@@ -28,7 +28,7 @@ export default function Page() {
   return (
     <section>
       <h1 className='title'>Events</h1>
-      <p className='mb-8 text-sm text-muted-foreground'>{pageDescription}</p>
+      <p className='lede mb-10'>{pageDescription}</p>
       <EventsList events={EVENTS} />
     </section>
   )
