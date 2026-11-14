@@ -18,7 +18,8 @@ export const Navbar = () => {
       >
         <Link
           href='/'
-          className='text-foreground font-mono text-sm font-semibold tracking-tight'
+          aria-label='Shrijal Acharya, home'
+          className='text-foreground font-mono text-xl font-bold tracking-tight select-none'
         >
           shrijal<span className='text-muted-foreground'>.</span>
         </Link>

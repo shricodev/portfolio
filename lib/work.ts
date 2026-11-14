@@ -18,6 +18,7 @@ export const WORK: WorkEntry[] = [
     org: 'Composio',
     orgUrl: 'https://composio.dev',
     role: 'Developer Advocate',
+    type: 'Part-time',
     start: 'Feb 2025',
     end: 'Present',
     summary:
@@ -27,6 +28,10 @@ export const WORK: WorkEntry[] = [
       'Write tutorials, integration guides, and technical walkthroughs.',
     ],
     links: [
+      {
+        label: 'Composio author page',
+        href: 'https://composio.dev/authors/shrijal',
+      },
       { label: 'kron-k8s-agent', href: '/projects/kron-k8s-agent' },
       {
         label: 'durable-agent-in-the-loop',
@@ -36,7 +41,6 @@ export const WORK: WorkEntry[] = [
         label: 'chat-nextjs-mcp-client',
         href: '/projects/chat-nextjs-mcp-client',
       },
-      { label: 'Articles on DEV', href: '/blogs?source=devto' },
     ],
   },
   {
@@ -68,6 +72,7 @@ export const WORK: WorkEntry[] = [
     org: 'freeCodeCamp',
     orgUrl: 'https://www.freecodecamp.org/news/author/shricodev/',
     role: 'Technical Writer',
+    type: 'Part-time',
     start: 'Apr 2024',
     end: 'Present',
     summary:
@@ -81,19 +86,20 @@ export const WORK: WorkEntry[] = [
     ],
   },
   {
-    org: 'Oppia Foundation',
-    orgUrl: 'https://www.oppia.org',
-    role: 'Development Team Lead',
-    type: 'Open source',
-    start: 'May 2023',
+    org: 'DEV (Forem)',
+    orgUrl: 'https://dev.to/shricodev',
+    role: 'Technical Writer',
+    type: 'Self-employed',
+    start: 'Jul 2023',
     end: 'Present',
     summary:
-      'Oppia is an open-source platform that brings quality education to people who lack access to it. I lead the Dev Workflow and Welfare team, focused on developer experience across the project.',
+      'I publish technical articles on DEV about the tools I use and the projects I build.',
     highlights: [
-      'Contribute code to the LaCE team, building and maintaining onboarding for new contributors.',
-      'Collaborate with the Contributor Dashboard team on the full-stack contribution management app.',
+      'Articles on DEV have passed 550,000 views.',
+      'Grew a following of 6,500+ readers.',
+      'Featured multiple times among the authors of the week.',
     ],
-    links: [{ label: 'oppia/oppia', href: 'https://github.com/oppia/oppia' }],
+    links: [{ label: 'Articles on DEV', href: '/blogs?source=devto' }],
   },
   {
     org: 'Microsoft',
@@ -112,9 +118,24 @@ export const WORK: WorkEntry[] = [
     links: [{ label: 'Events I have run', href: '/events' }],
   },
   {
+    org: 'Oppia Foundation',
+    orgUrl: 'https://www.oppia.org',
+    role: 'Development Team Lead',
+    type: 'Open source',
+    start: 'May 2023',
+    end: 'Apr 2026',
+    summary:
+      'Oppia is an open-source platform that brings quality education to people who lack access to it. I led the Dev Workflow and Welfare team, which works on developer experience across the project.',
+    highlights: [
+      'Contributed code to the LaCE team, which builds and maintains the onboarding flow for new contributors.',
+      'Worked with the Contributor Dashboard team on the full-stack app for managing contributions.',
+    ],
+    links: [{ label: 'oppia/oppia', href: 'https://github.com/oppia/oppia' }],
+  },
+  {
     org: 'GirlScript Summer of Code',
     role: 'Individual Contributor',
-    type: 'Open source',
+    type: 'Part-time',
     start: 'May 2024',
     end: 'Jul 2024',
     summary:

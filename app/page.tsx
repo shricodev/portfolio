@@ -44,14 +44,7 @@ const personJsonLd = {
   ],
 }
 
-const STACK = [
-  { label: 'Languages', items: 'TypeScript, Python, Go' },
-  { label: 'AI', items: 'Agents, tool calling, MCP, LangGraph, Temporal' },
-  { label: 'Infra', items: 'Docker, Kubernetes, GCP, AWS, Ansible' },
-  { label: 'Web', items: 'Next.js, React, Node.js, PostgreSQL' },
-]
-
-const FEATURED_COUNT = 5
+const FEATURED_COUNT = 6
 const RECENT_COUNT = 3
 
 export default async function Home() {
@@ -96,7 +89,7 @@ export default async function Home() {
           Experience
         </h2>
         <ul className='divide-border/60 mt-4 divide-y'>
-          {WORK.slice(0, 5).map(entry => (
+          {WORK.slice(0, 6).map(entry => (
             <li
               key={entry.org}
               className='flex flex-col gap-0.5 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4'
@@ -117,20 +110,6 @@ export default async function Home() {
         >
           What I did in each role
         </Link>
-      </section>
-
-      <section aria-labelledby='stack' className='mt-20'>
-        <h2 id='stack' className='text-xl font-semibold tracking-tight'>
-          Stack
-        </h2>
-        <dl className='mt-4 space-y-2.5'>
-          {STACK.map(group => (
-            <div key={group.label} className='flex gap-4 text-[15px]'>
-              <dt className='eyebrow w-24 shrink-0 pt-1'>{group.label}</dt>
-              <dd>{group.items}</dd>
-            </div>
-          ))}
-        </dl>
       </section>
 
       <section aria-labelledby='elsewhere' className='mt-20'>

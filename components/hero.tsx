@@ -52,17 +52,18 @@ export function Hero({ postCount }: { postCount: number }) {
 
       <div className='text-muted-foreground mt-6 max-w-2xl space-y-4 leading-7'>
         <p>
-          My work sits where software engineering, DevOps, and technical writing
-          meet. I ship real projects in{' '}
+          I work mostly in{' '}
           <span className='text-foreground'>TypeScript, Python, and Go</span>,
-          run them on{' '}
-          <span className='text-foreground'>Docker, Kubernetes, GCP, and AWS</span>
-          , and document how they work so the next person can build on them.
+          and deploy with{' '}
+          <span className='text-foreground'>Docker and Kubernetes</span> on GCP
+          and AWS. Every project I build comes with a write-up, so other
+          developers can follow along and build on it.
         </p>
         <p>
-          Outside of Composio I write for freeCodeCamp, lead a development team
-          at Oppia Foundation, and run community workshops as a Microsoft Gold
-          Student Ambassador. And yes, I use Vim and Arch, btw.
+          I also write for freeCodeCamp and DEV, run community workshops as a
+          Microsoft Gold Student Ambassador, and spent three years leading a
+          development team at Oppia Foundation. And yes, I use Vim and Arch,
+          btw.
         </p>
       </div>
 
