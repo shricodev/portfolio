@@ -49,10 +49,10 @@ themselves. It runs locally in ~5 GB of VRAM and was trained on one free Kaggle 
 The weights are on Hugging Face as
 [`shricodev/chashmish-babubhaiya`](https://huggingface.co/shricodev/chashmish-babubhaiya).
 This repo is everything around them: the crawler that builds the data, training, evaluation,
-an HTTP API, Docker, and a browser agent. The Python package and CLI are called `pinpoint`.
+an HTTP API, Docker, and a browser agent. The Python package and CLI are called `chashma`.
 
 ```bash
-pinpoint predict mailchimp.png "call the Mailchimp sales phone number" --save out.png
+chashma predict mailchimp.png "call the Mailchimp sales phone number" --save out.png
 # click at (949, 75)  raw='(741, 93)'  1481ms      <- lands on "Sales: +1 (...)" in the header
 ```
 
@@ -101,7 +101,7 @@ brings.
 ### 1. Data that labels itself
 
 The browser already knows where every button is. The crawler renders real sites with
-Playwright and runs [`extract.js`](src/pinpoint/data/extract.js) in the page to pull every
+Playwright and runs [`extract.js`](src/chashma/data/extract.js) in the page to pull every
 interactive element with its exact bounding box.
 
 <p align="center">
@@ -132,7 +132,7 @@ Boxes alone aren't enough; the model has to learn how people *ask* for things.
 
 - **templates** ("click Pricing", "open the search field") are free and come straight from
   the element's text, aria-label or placeholder, only when that label is unique on the page.
-- **LLM instructions** ([`annotate.py`](src/pinpoint/data/annotate.py)): numbered marks are
+- **LLM instructions** ([`annotate.py`](src/chashma/data/annotate.py)): numbered marks are
   drawn on ~8 non-overlapping targets and a vision LLM writes three styles per mark in one
   call per page: *direct* ("click Sign in"), *functional* ("log into my account") and
   *visual* ("the magnifying glass at the top right"). Instructions that mention the
@@ -189,7 +189,7 @@ viewport and theme, and on
 
 ### 6. The agent: plan in words, click with chashma
 
-[`agent/browser.py`](src/pinpoint/agent/browser.py) splits a browser agent in two. The
+[`agent/browser.py`](src/chashma/agent/browser.py) splits a browser agent in two. The
 planner LLM sees a downscaled screenshot and only decides *what* to do next, in words
 ("type asyncio into the quick search field"). chashma decides *where*. The planner never
 emits coordinates, so it works from cheap low-res images, and the precise part runs
@@ -197,11 +197,11 @@ locally. Every run saves per-step screenshots with the click drawn on them, a
 `trajectory.json` and a GIF (like the one at the top).
 
 ```bash
-pinpoint agent "open the documentation page for the asyncio module" \
+chashma agent "open the documentation page for the asyncio module" \
   --url https://docs.python.org/3/ --headed
 ```
 
-`--grounder` also takes `http://localhost:8000` (a running `pinpoint serve`) or
+`--grounder` also takes `http://localhost:8000` (a running `chashma serve`) or
 `anthropic:<model>` to compare against a frontier model doing both jobs.
 
 ## Usage
@@ -216,8 +216,8 @@ uv run playwright install chromium
 Just use the model (downloads [`shricodev/chashmish-babubhaiya`](https://huggingface.co/shricodev/chashmish-babubhaiya) on first run):
 
 ```bash
-uv run pinpoint predict shot.png "open the pricing page" --save out.png
-uv run pinpoint serve
+uv run chashma predict shot.png "open the pricing page" --save out.png
+uv run chashma serve
 curl -F image=@shot.png -F instruction="open settings" localhost:8000/v1/ground
 ```
 
@@ -227,35 +227,35 @@ Build the data, train and evaluate your own:
 echo "ANTHROPIC_API_KEY=..." > .env    # only for LLM instructions, baselines and the agent planner
 
 uv run python scripts/make_seeds.py --top 3000    # -> data/seeds_tranco.txt
-pinpoint crawl --seeds data/seeds_tranco.txt      # screenshots + boxes -> data/captures
-pinpoint annotate --model anthropic:claude-haiku-5-5   # optional, costs API calls
-pinpoint build                                    # -> data/dataset/{train,val,test}.jsonl
+chashma crawl --seeds data/seeds_tranco.txt      # screenshots + boxes -> data/captures
+chashma annotate --model anthropic:claude-haiku-5-5   # optional, costs API calls
+chashma build                                    # -> data/dataset/{train,val,test}.jsonl
 
-pinpoint train                                    # configs/train_qwen3vl_2b.yaml
+chashma train                                    # configs/train_qwen3vl_2b.yaml
 # or on a free Kaggle T4 (KAGGLE_TOKEN in .env):
 scripts/kaggle_train.sh push && scripts/kaggle_train.sh watch
 
-pinpoint eval --split test --limit 300
-pinpoint eval --dataset screenspot --platform web
-pinpoint eval --model anthropic:claude-haiku-5-5 --split test --limit 300   # baseline
+chashma eval --split test --limit 300
+chashma eval --dataset screenspot --platform web
+chashma eval --model anthropic:claude-haiku-5-5 --split test --limit 300   # baseline
 ```
 
-Every command takes `--model`. Without it, a local `checkpoints/pinpoint-qwen3vl-2b` is used
+Every command takes `--model`. Without it, a local `checkpoints/chashma-qwen3vl-2b` is used
 if you trained one, otherwise the Hugging Face model.
 
 ### Docker (GPU)
 
 ```bash
-docker build -t pinpoint .
+docker build -t chashma .
 docker run --gpus all -p 8000:8000 \
-  -e PINPOINT_MODEL=shricodev/chashmish-babubhaiya \
-  -v ~/.cache/huggingface:/root/.cache/huggingface pinpoint
+  -e CHASHMA_MODEL=shricodev/chashmish-babubhaiya \
+  -v ~/.cache/huggingface:/root/.cache/huggingface chashma
 curl localhost:8000/health
 ```
 
 To serve your own checkpoint instead, export it with
-`pinpoint publish --repo you/your-model` and mount `dist/hf/your-model` at
-`/models/pinpoint` (the default `PINPOINT_MODEL`).
+`chashma publish --repo you/your-model` and mount `dist/hf/your-model` at
+`/models/chashma` (the default `CHASHMA_MODEL`).
 
 `--gpus all` needs the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
 Without it the same image runs on CPU (~9 GB RAM, ~20 s per click).
@@ -263,7 +263,7 @@ Without it the same image runs on CPU (~9 GB RAM, ~20 s per click).
 ## Layout
 
 ```
-src/pinpoint/
+src/chashma/
   data/      extract.js, crawler, set-of-marks, annotation, templates, dataset build
   model/     answer format, local VLM / API / HTTP grounders
   train/     SFT with image packing (full or LoRA)
